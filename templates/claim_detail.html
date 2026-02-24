@@ -1,0 +1,133 @@
+<div class="claim-detail-view">
+    <div class="detail-header">
+        <div>
+            <h2 style="margin-bottom:0.25rem">{{ claim.claim_id }}</h2>
+            <span class="status-pill {{ claim.status|lower|replace(' ', '-') }}">{{ claim.status }}</span>
+        </div>
+        <div style="display:flex; gap:0.5rem">
+            <button onclick="printClaim('{{ claim.claim_id }}')" class="btn-icon" title="Print"><i
+                    class="ri-printer-line"></i></button>
+        </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('details')">Details</button>
+        <button class="tab-btn" onclick="switchTab('workflow')">Workflow</button>
+        <button class="tab-btn" onclick="switchTab('history')">History</button>
+    </div>
+
+    <!-- TAB 1: DETAILS -->
+    <div id="tab-details" class="tab-content active">
+        <div class="grid-2">
+            <div class="field-group">
+                <label>Customer Name</label>
+                <input type="text" value="{{ claim.customer_name }}" readonly>
+            </div>
+            <div class="field-group">
+                <label>Mobile Number</label>
+                <input type="text" value="{{ claim.mobile_no }}" readonly>
+            </div>
+            <div class="field-group">
+                <label>Product Model</label>
+                <input type="text" value="{{ claim.model }}" readonly>
+            </div>
+            <div class="field-group">
+                <label>Serial / IMEI</label>
+                <input type="text" value="{{ claim.serial_no }}" readonly>
+            </div>
+            <div class="field-group">
+                <label>Purchase Date</label>
+                <input type="text" value="{{ claim.purchase_date if claim.purchase_date else '-' }}" readonly>
+            </div>
+            <div class="field-group">
+                <label>Issue Description</label>
+                <textarea readonly rows="2">{{ claim.issue }}</textarea>
+            </div>
+            <div class="field-group">
+                <label>Branch</label>
+                <input type="text" value="{{ claim.branch }}" readonly>
+            </div>
+        </div>
+
+        <div class="update-section" style="margin-top:2rem; padding-top:2rem; border-top:1px solid #eee;">
+            <h3 style="font-size:1.1rem; margin-bottom:1rem;">Update Status</h3>
+            <div class="field-group">
+                <label>Current Status</label>
+                <div class="status-select-wrapper">
+                    <select id="new_status" class="status-select" onchange="toggleWorkflowOptions(this.value)">
+                        <option value="Registered" {% if claim.status=='Registered' %}selected{% endif %}>Registered
+                        </option>
+                        <option value="Submitted" {% if claim.status=='Submitted' %}selected{% endif %}>Submitted
+                        </option>
+                        <option value="Replacement Approved" {% if claim.status=='Replacement Approved' %}selected{%
+                            endif %}>Replacement Approved</option>
+                        <option value="Repair Completed" {% if claim.status=='Repair Completed' %}selected{% endif %}>
+                            Repair Completed</option>
+                        <option value="Follow Up" {% if claim.status=='Follow Up' %}selected{% endif %}>Follow Up
+                        </option>
+                        <option value="Claim Settled" {% if claim.status=='Claim Settled' %}selected{% endif %}>Claim
+                            Settled</option>
+                        <option value="Closed" {% if claim.status=='Closed' %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Remarks</label>
+                <textarea id="update_remarks" rows="3" placeholder="Enter remarks for this update..."></textarea>
+            </div>
+
+            <button onclick="updateClaimStatus('{{ claim.claim_id }}')" class="btn-primary" style="width:100%">Update
+                Claim</button>
+        </div>
+    </div>
+
+    <!-- TAB 2: WORKFLOW (Enhanced) -->
+    <div id="tab-workflow" class="tab-content">
+        <div id="workflow-container">
+            <!-- Workflow UI injected by script.js -->
+        </div>
+    </div>
+
+    <!-- TAB 3: HISTORY -->
+    <div id="tab-history" class="tab-content">
+        <div class="history-list">
+            {% if claim.history %}
+            {% for log in claim.history %}
+            <div class="history-item" style="padding:1rem; border-bottom:1px solid #eee;">
+                <div style="font-weight:600; font-size:0.9rem;">{{ log.status }}</div>
+                <div style="color:#777; font-size:0.8rem;">{{ log.date }}</div>
+                <div style="margin-top:0.25rem;">{{ log.remarks }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color:#999; text-align:center; padding:2rem;">No history available</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- DATA FOR JS -->
+{% set cdata = {
+'claim_id': claim.claim_id,
+'status': claim.status,
+'customer_name': claim.customer_name,
+'mobile': claim.mobile_no,
+'product_name': claim.model,
+'serial_no': claim.serial_no,
+'purchase_date': claim.purchase_date,
+'complaint': claim.issue,
+'branch': claim.branch,
+'replacement_confirmation': claim.replacement_confirmation,
+'replacement_osg_approval': claim.replacement_osg_approval,
+'replacement_mail_store': claim.replacement_mail_store,
+'replacement_invoice_gen': claim.replacement_invoice_gen,
+'replacement_invoice_sent': claim.replacement_invoice_sent,
+'replacement_settled_accounts': claim.replacement_settled_accounts,
+'complete': claim.complete,
+'history': claim.history if claim.history else []
+} %}
+<script id="claim-data-json" type="application/json">
+{{ cdata | tojson | safe }}
+</script>

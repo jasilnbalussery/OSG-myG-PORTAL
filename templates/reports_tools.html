@@ -1,0 +1,579 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="header-title">
+        <h1>Reports & Tools</h1>
+        <p>Advanced Analytics & Data Processing</p>
+    </div>
+</div>
+
+<div class="glass-panel" style="padding: 0; overflow: hidden;">
+    <!-- Stylish Tab Navigation -->
+    <div class="tabs-header">
+        <button class="tab-link active" onclick="openReportTab(event, 'tab-report1')">
+            <span class="icon-box-sm blue"><i class="ri-bar-chart-2-fill"></i></span>
+            <span>OSG Report 1</span>
+        </button>
+        <button class="tab-link" onclick="openReportTab(event, 'tab-report2')">
+            <span class="icon-box-sm green"><i class="ri-file-list-3-fill"></i></span>
+            <span>OSG Report 2</span>
+        </button>
+        <button class="tab-link" onclick="openReportTab(event, 'tab-mapping')">
+            <span class="icon-box-sm purple"><i class="ri-shuffle-line"></i></span>
+            <span>Data Mapping</span>
+        </button>
+    </div>
+
+    <div class="tab-container">
+        <!-- Tab 1: OSG Report 1 -->
+        <div id="tab-report1" class="report-content active">
+            <div class="instruction-banner blue">
+                <i class="ri-information-fill"></i>
+                <div class="instruction-text">
+                    <strong>Generate Comprehensive Sales Report</strong>
+                    <p>Upload current month's OSG Sales, Product Sales, and Previous Month's OSG Sales data.</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('generate_report_1') }}" method="POST" enctype="multipart/form-data"
+                class="premium-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Current Report Date</label>
+                        <div class="input-wrapper">
+                            <i class="ri-calendar-event-line"></i>
+                            <input type="date" name="report_date" required value="{{ today }}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Previous Report Date</label>
+                        <div class="input-wrapper">
+                            <i class="ri-history-line"></i>
+                            <input type="date" name="prev_date" required value="{{ month_start }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <div class="file-drop-zone">
+                        <label>Current Month OSG Sales Data</label>
+                        <div class="drop-area">
+                            <i class="ri-file-excel-2-line"></i>
+                            <span class="file-msg">Click to upload .xlsx file</span>
+                            <input type="file" name="curr_sales" accept=".xlsx" required
+                                onchange="updateFileName(this)">
+                        </div>
+                    </div>
+
+                    <div class="file-drop-zone">
+                        <label>Product Sales Data</label>
+                        <div class="drop-area">
+                            <i class="ri-shopping-bag-3-line"></i>
+                            <span class="file-msg">Click to upload .xlsx file</span>
+                            <input type="file" name="product_sales" accept=".xlsx" required
+                                onchange="updateFileName(this)">
+                        </div>
+                    </div>
+
+                    <div class="file-drop-zone">
+                        <label>Previous Month OSG Data</label>
+                        <div class="drop-area">
+                            <i class="ri-time-line"></i>
+                            <span class="file-msg">Click to upload .xlsx file</span>
+                            <input type="file" name="prev_sales" accept=".xlsx" required
+                                onchange="updateFileName(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-lg">
+                        <i class="ri-download-cloud-2-line"></i> Generate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tab 2: OSG Report 2 -->
+        <div id="tab-report2" class="report-content">
+            <div class="instruction-banner green">
+                <i class="ri-file-list-fill"></i>
+                <div class="instruction-text">
+                    <strong>Store Summary Day View</strong>
+                    <p>Generate a daily sales summary for all stores based on the specific time slot.</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('generate_report_2') }}" method="POST" enctype="multipart/form-data"
+                class="premium-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Select Date</label>
+                        <div class="input-wrapper">
+                            <i class="ri-calendar-check-line"></i>
+                            <input type="date" name="selected_date" required value="{{ today }}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Time Slot</label>
+                        <div class="select-wrapper">
+                            <i class="ri-time-line"></i>
+                            <select name="time_slot">
+                                <option value="12:30PM">12:30 PM (Noon)</option>
+                                <option value="1PM">1:00 PM</option>
+                                <option value="4PM">4:00 PM</option>
+                                <option value="6PM">6:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-section">
+                    <div class="file-drop-zone large">
+                        <label>Daily Sales Report</label>
+                        <div class="drop-area">
+                            <i class="ri-file-text-line"></i>
+                            <span class="file-msg">Upload Daily Sales .xlsx</span>
+                            <input type="file" name="book2" accept=".xlsx" required onchange="updateFileName(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-lg green">
+                        <i class="ri-file-excel-2-line"></i> Generate Day View
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Tab 3: Data Mapping -->
+        <div id="tab-mapping" class="report-content">
+            <div class="instruction-banner purple">
+                <i class="ri-share-forward-fill"></i>
+                <div class="instruction-text">
+                    <strong>OSG & Product Data Mapping</strong>
+                    <p>Link OSG warranty data with Product sales data to map Models, Categories, and IMEIs.</p>
+                </div>
+            </div>
+
+            <form action="{{ url_for('map_data') }}" method="POST" enctype="multipart/form-data" class="premium-form">
+                <div class="upload-section dual">
+                    <div class="file-drop-zone">
+                        <label>OSG File</label>
+                        <div class="drop-area">
+                            <i class="ri-shield-star-line"></i>
+                            <span class="file-msg">Upload OSG Data .xlsx</span>
+                            <input type="file" name="osg_file" accept=".xlsx" required onchange="updateFileName(this)">
+                        </div>
+                    </div>
+
+                    <div class="file-drop-zone">
+                        <label>Product File</label>
+                        <div class="drop-area">
+                            <i class="ri-smartphone-line"></i>
+                            <span class="file-msg">Upload Product Data .xlsx</span>
+                            <input type="file" name="product_file" accept=".xlsx" required
+                                onchange="updateFileName(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-lg purple">
+                        <i class="ri-magic-line"></i> Process Mapping
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Premium Reports & Tools Styles */
+
+    /* Tabs Header */
+    .tabs-header {
+        display: flex;
+        background: #f8fafc;
+        border-bottom: 1px solid var(--border-light);
+        padding: 0.5rem 1rem 0;
+        gap: 0.5rem;
+    }
+
+    .tab-link {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        background: transparent;
+        border: none;
+        border-radius: 12px 12px 0 0;
+        color: var(--text-secondary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-bottom: 3px solid transparent;
+        font-size: 0.95rem;
+    }
+
+    .tab-link:hover {
+        background: #eff6ff;
+        color: var(--primary);
+    }
+
+    .tab-link.active {
+        background: white;
+        color: var(--text-main);
+        border-bottom-color: var(--primary);
+    }
+
+    .tab-link.active .icon-box-sm {
+        transform: scale(1.1);
+    }
+
+    .icon-box-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: white;
+        transition: transform 0.2s;
+    }
+
+    .icon-box-sm.blue {
+        background: var(--primary-gradient);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    }
+
+    .icon-box-sm.green {
+        background: var(--success-gradient);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    }
+
+    .icon-box-sm.purple {
+        background: var(--accent-gradient);
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+    }
+
+    .tab-container {
+        padding: 2.5rem;
+        background: white;
+        min-height: 400px;
+    }
+
+    .report-content {
+        display: none;
+        animation: slideUp 0.3s ease-out;
+    }
+
+    .report-content.active {
+        display: block;
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Instruction Banners */
+    .instruction-banner {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        align-items: flex-start;
+    }
+
+    .instruction-banner.blue {
+        background: #eff6ff;
+        border: 1px solid #dbeafe;
+        color: #1e40af;
+    }
+
+    .instruction-banner.green {
+        background: #ecfdf5;
+        border: 1px solid #d1fae5;
+        color: #065f46;
+    }
+
+    .instruction-banner.purple {
+        background: #f5f3ff;
+        border: 1px solid #ede9fe;
+        color: #5b21b6;
+    }
+
+    .instruction-banner i {
+        font-size: 1.5rem;
+    }
+
+    .instruction-text strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 1.05rem;
+    }
+
+    .instruction-text p {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+
+    /* Forms */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .input-wrapper,
+    .select-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-wrapper i,
+    .select-wrapper i {
+        position: absolute;
+        left: 1rem;
+        color: var(--text-tertiary);
+        font-size: 1.2rem;
+        pointer-events: none;
+    }
+
+    .input-wrapper input,
+    .select-wrapper select {
+        width: 100%;
+        padding: 0.875rem 1rem 0.875rem 3rem;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        font-size: 1rem;
+        color: var(--text-main);
+        background: #f8fafc;
+        transition: all 0.2s;
+        font-family: var(--font-main);
+    }
+
+    .input-wrapper input:focus,
+    .select-wrapper select:focus {
+        background: white;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    /* Custom File Upload */
+    .upload-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .upload-section.dual {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .file-drop-zone label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-main);
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .drop-area {
+        position: relative;
+        border: 2px dashed var(--border-light);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.2s;
+        background: #f8fafc;
+        cursor: pointer;
+    }
+
+    .drop-area:hover {
+        border-color: var(--primary);
+        background: #eff6ff;
+    }
+
+    .drop-area i {
+        font-size: 2.5rem;
+        color: var(--text-tertiary);
+        margin-bottom: 0.5rem;
+        display: block;
+        transition: color 0.2s;
+    }
+
+    .drop-area:hover i {
+        color: var(--primary);
+    }
+
+    .file-msg {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .drop-area input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .badge {
+        font-size: 0.7rem;
+        background: #f3f4f6;
+        padding: 2px 8px;
+        border-radius: 100px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    /* Action Buttons */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-light);
+    }
+
+    .btn-primary-lg {
+        display: inline-flex;
+        align-items: center;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1.05rem;
+        cursor: pointer;
+        gap: 0.75rem;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-primary-lg:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary-lg.green {
+        background: var(--success-gradient);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-primary-lg.green:hover {
+        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-primary-lg.purple {
+        background: var(--accent-gradient);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    }
+
+    .btn-primary-lg.purple:hover {
+        box-shadow: 0 8px 16px rgba(139, 92, 246, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .tabs-header {
+            flex-direction: column;
+            padding: 0;
+        }
+
+        .tab-link {
+            width: 100%;
+            border-radius: 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .upload-section.dual {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    function openReportTab(evt, tabName) {
+        // Hide all contents
+        const contents = document.querySelectorAll('.report-content');
+        contents.forEach(content => {
+            content.classList.remove('active');
+            content.style.display = 'none'; // Ensure strictly hidden before animation
+        });
+
+        // Deactivate all tabs
+        const links = document.querySelectorAll('.tab-link');
+        links.forEach(link => link.classList.remove('active'));
+
+        // Show target content
+        const target = document.getElementById(tabName);
+        target.style.display = 'block';
+        // Small timeout to allow display:block to apply before adding class for animation
+        setTimeout(() => target.classList.add('active'), 10);
+
+        // Activate tab
+        evt.currentTarget.classList.add('active');
+    }
+
+    function updateFileName(input) {
+        const dropArea = input.closest('.drop-area');
+        const msgSpan = dropArea.querySelector('.file-msg');
+        const icon = dropArea.querySelector('i');
+
+        if (input.files && input.files[0]) {
+            msgSpan.textContent = input.files[0].name;
+            msgSpan.style.color = 'var(--primary)';
+            msgSpan.style.fontWeight = '600';
+
+            // Change icon to check
+            icon.className = 'ri-file-check-fill';
+            icon.style.color = 'var(--success)';
+
+            dropArea.style.borderColor = 'var(--success)';
+            dropArea.style.background = '#f0fdf4';
+        } else {
+            msgSpan.textContent = 'Click to upload .xlsx file';
+            icon.className = 'ri-upload-cloud-2-line';
+            icon.style.color = ''; // Reset
+            dropArea.style.borderColor = ''; // Reset
+            dropArea.style.background = ''; // Reset
+        }
+    }
+
+
+</script>
+{% endblock %}

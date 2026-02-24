@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSG myG PORTAL | Warranty Management</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=minimal">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}?v=minimal">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/workflow_enhanced.css') }}?v=minimal">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="background-globes">
+        <div class="globe globe-1"></div>
+        <div class="globe globe-2"></div>
+        <div class="globe globe-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <i class="ri-shield-check-fill logo-icon"></i>
+                <span>OSG myG</span>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="{{ url_for('dashboard') }}"
+                    class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="ri-dashboard-line"></i> Dashboard
+                </a>
+                <a href="{{ url_for('analytics_dashboard') }}"
+                    class="nav-item {% if request.endpoint == 'analytics_dashboard' %}active{% endif %}">
+                    <i class="ri-bar-chart-box-line"></i> Analytics
+                </a>
+                <a href="{{ url_for('reports_tools') }}"
+                    class="nav-item {% if request.endpoint == 'reports_tools' %}active{% endif %}">
+                    <i class="ri-file-chart-line"></i> Reports
+                    <a href="{{ url_for('submit_claim') }}"
+                        class="nav-item {% if request.endpoint == 'submit_claim' %}active{% endif %}">
+                        <i class="ri-add-circle-line"></i> New Claim
+                    </a>
+            </nav>
+
+            <div class="user-profile">
+                <div class="user-avatar">{{ session.get('username', 'Admin')[:2]|upper }}</div>
+                <div class="user-info">
+                    <span class="name">{{ session.get('username', 'Admin User')|capitalize }}</span>
+                    <span class="role">Manager</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn" title="Logout">
+                    <i class="ri-logout-box-r-line"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Modals or Overlays -->
+    <div id="modal-container" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <button class="close-modal" onclick="closeModal()"><i class="ri-close-line"></i></button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}?v=3"></script>
+</body>
+
+</html>

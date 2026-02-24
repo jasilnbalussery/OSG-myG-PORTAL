@@ -1,0 +1,307 @@
+<!-- Enhanced Workflow Modal Section -->
+<!-- Use this to replace the replacement workflow section in your modal -->
+
+<div class="workflow-section" id="workflow-replacement-section">
+    <!-- Header with Progress -->
+    <div class="workflow-header">
+        <div class="workflow-title">
+            <i class="ri-exchange-line"></i>
+            Replacement Workflow
+        </div>
+        <div class="workflow-progress">
+            <span class="progress-text" id="workflow-progress-text">0 of 6 completed</span>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="workflow-progress-bar" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Steps -->
+    <div class="workflow-steps">
+        <!-- Step 1: Customer Confirmation -->
+        <div class="workflow-step" data-step-number="1" onclick="toggleWorkflowStep(this, 'chk_repl_confirmation')">
+            <div class="step-icon" data-step="1"></div>
+            <div class="step-content">
+                <div class="step-info">
+                    <div class="step-label">Customer Confirmation</div>
+                    <div class="step-description">Customer has confirmed replacement request</div>
+                </div>
+                <input type="checkbox" id="chk_repl_confirmation" class="step-checkbox"
+                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+            </div>
+        </div>
+
+        <!-- Step 2: OSG Approval -->
+        <div class="workflow-step" data-step-number="2" onclick="toggleWorkflowStep(this, 'chk_repl_osg_approval')">
+            <div class="step-icon" data-step="2"></div>
+            <div class="step-content">
+                <div class="step-info">
+                    <div class="step-label">OSG Approval</div>
+                    <div class="step-description">Received approval from Onsitego</div>
+                </div>
+                <input type="checkbox" id="chk_repl_osg_approval" class="step-checkbox"
+                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+            </div>
+        </div>
+
+        <!-- Step 3: Mail to Store -->
+        <div class="workflow-step" data-step-number="3" onclick="toggleWorkflowStep(this, 'chk_repl_mail_store')">
+            <div class="step-icon" data-step="3"></div>
+            <div class="step-content">
+                <div class="step-info">
+                    <div class="step-label">Mail Sent To Store</div>
+                    <div class="step-description">Replacement request sent to store</div>
+                </div>
+                <input type="checkbox" id="chk_repl_mail_store" class="step-checkbox"
+                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+            </div>
+        </div>
+
+        <!-- Step 4: Invoice Generated -->
+        <div class="workflow-step" data-step-number="4" onclick="toggleWorkflowStep(this, 'chk_repl_invoice_gen')">
+            <div class="step-icon" data-step="4"></div>
+            <div class="step-content">
+                <div class="step-info">
+                    <div class="step-label">Invoice Generated</div>
+                    <div class="step-description">Replacement invoice has been created</div>
+                </div>
+                <input type="checkbox" id="chk_repl_invoice_gen" class="step-checkbox"
+                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+            </div>
+        </div>
+
+        <!-- Step 5: Invoice Sent -->
+        <div class="workflow-step" data-step-number="5" onclick="toggleWorkflowStep(this, 'chk_repl_invoice_sent')">
+            <div class="step-icon" data-step="5"></div>
+            <div class="step-content">
+                <div class="step-info">
+                    <div class="step-label">Invoice Sent To Onsitego</div>
+                    <div class="step-description">Invoice submitted to Onsitego for payment</div>
+                </div>
+                <input type="checkbox" id="chk_repl_invoice_sent" class="step-checkbox"
+                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+            </div>
+        </div>
+
+        <!-- Step 6: Settled with Accounts -->
+        <div class="workflow-step" data-step-number="6" onclick="toggleWorkflowStep(this, 'chk_repl_settled_accounts')">
+            <div class="step-icon" data-step="6"></div>
+            <div class="step-content">
+                <div class="step-info">
+                    <div class="step-label">Settled With Accounts</div>
+                    <div class="step-description">Payment received and settled</div>
+                </div>
+                <input type="checkbox" id="chk_repl_settled_accounts" class="step-checkbox"
+                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+            </div>
+        </div>
+    </div>
+
+    <!-- TAT Display -->
+    <div class="tat-display">
+        <span class="tat-label">Turn Around Time (TAT):</span>
+        <span>
+            <span class="tat-value" id="disp_tat">--</span>
+            <span class="tat-unit">days</span>
+        </span>
+    </div>
+
+    <!-- Completion Badge -->
+    <div class="completion-badge incomplete" id="workflow-completion-badge">
+        <i class="ri-time-line"></i>
+        <span id="completion-badge-text">Workflow In Progress</span>
+    </div>
+
+    <!-- Mark as Complete Checkbox -->
+    <div class="workflow-step" style="margin-top: 20px;" onclick="toggleWorkflowStep(this, 'chk_complete_repl')">
+        <div class="step-icon" data-step="✓" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+        </div>
+        <div class="step-content">
+            <div class="step-info">
+                <div class="step-label" style="font-size: 1.1rem;"><strong>Mark as Complete</strong></div>
+                <div class="step-description">Claim has been fully processed and closed</div>
+            </div>
+            <input type="checkbox" id="chk_complete_repl" class="step-checkbox"
+                onclick="event.stopPropagation(); updateCompletionStatus()">
+        </div>
+    </div>
+
+    <!-- Save Button -->
+    <button class="save-changes-btn" id="saveWorkflowBtn" onclick="saveWorkflowChanges()">
+        <i class="ri-save-line"></i> Save Changes
+    </button>
+</div>
+
+<script>
+    /**
+     * Enhanced Workflow Functions
+     */
+
+    // Toggle workflow step by clicking anywhere on the row
+    function toggleWorkflowStep(stepElement, checkboxId) {
+        const checkbox = document.getElementById(checkboxId);
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            updateWorkflowProgress();
+
+            // Update visual state
+            if (checkbox.checked) {
+                stepElement.classList.add('completed');
+            } else {
+                stepElement.classList.remove('completed');
+            }
+        }
+    }
+
+    // Update progress bar and counter
+    function updateWorkflowProgress() {
+        const checkboxes = [
+            'chk_repl_confirmation',
+            'chk_repl_osg_approval',
+            'chk_repl_mail_store',
+            'chk_repl_invoice_gen',
+            'chk_repl_invoice_sent',
+            'chk_repl_settled_accounts'
+        ];
+
+        let completed = 0;
+        const total = checkboxes.length;
+
+        checkboxes.forEach((id, index) => {
+            const checkbox = document.getElementById(id);
+            const stepElement = document.querySelector(`[data-step-number="${index + 1}"]`);
+
+            if (checkbox && checkbox.checked) {
+                completed++;
+                if (stepElement) stepElement.classList.add('completed');
+            } else {
+                if (stepElement) stepElement.classList.remove('completed');
+            }
+        });
+
+        // Update progress bar
+        const percentage = (completed / total) * 100;
+        const progressBar = document.getElementById('workflow-progress-bar');
+        const progressText = document.getElementById('workflow-progress-text');
+
+        if (progressBar) {
+            progressBar.style.width = percentage + '%';
+        }
+
+        if (progressText) {
+            progressText.textContent = `${completed} of ${total} completed`;
+        }
+
+        // Update completion badge
+        const completionBadge = document.getElementById('workflow-completion-badge');
+        const completionText = document.getElementById('completion-badge-text');
+
+        if (completionBadge && completionText) {
+            if (completed === total) {
+                completionBadge.className = 'completion-badge complete';
+                completionText.innerHTML = '<i class="ri-checkbox-circle-line"></i> All Steps Completed';
+            } else {
+                completionBadge.className = 'completion-badge incomplete';
+                completionText.innerHTML = `<i class="ri-time-line"></i> ${total - completed} Steps Remaining`;
+            }
+        }
+    }
+
+    // Update completion status
+    function updateCompletionStatus() {
+        const completeCheckbox = document.getElementById('chk_complete_repl');
+        const stepElement = completeCheckbox?.closest('.workflow-step');
+
+        if (completeCheckbox && stepElement) {
+            if (completeCheckbox.checked) {
+                stepElement.classList.add('completed');
+            } else {
+                stepElement.classList.remove('completed');
+            }
+        }
+    }
+
+    // Save workflow changes
+    async function saveWorkflowChanges() {
+        const btn = document.getElementById('saveWorkflowBtn');
+        const section = document.getElementById('workflow-replacement-section');
+
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ri-loader-4-line"></i> Saving...';
+        section.classList.add('loading');
+
+        try {
+            // Get all checkbox values
+            const updates = {
+                replacement_confirmation: document.getElementById('chk_repl_confirmation')?.checked || false,
+                replacement_osg_approval: document.getElementById('chk_repl_osg_approval')?.checked || false,
+                replacement_mail_store: document.getElementById('chk_repl_mail_store')?.checked || false,
+                replacement_invoice_gen: document.getElementById('chk_repl_invoice_gen')?.checked || false,
+                replacement_invoice_sent: document.getElementById('chk_repl_invoice_sent')?.checked || false,
+                replacement_settled_accounts: document.getElementById('chk_repl_settled_accounts')?.checked || false,
+                complete: document.getElementById('chk_complete_repl')?.checked || false,
+                status: document.getElementById('updateStatus')?.value,
+                follow_up_date: document.getElementById('followUpDate')?.value,
+                follow_up_notes: document.getElementById('followUpNotes')?.value,
+                assigned_staff: document.getElementById('assignedStaff')?.value
+            };
+
+            // Call API (use your existing Modal.save() or API.updateClaim())
+            const claimId = Modal.currentClaimId || document.getElementById('modalClaimId')?.textContent;
+            const success = await API.updateClaim(claimId, updates);
+
+            if (success) {
+                // Success animation
+                section.classList.add('save-success');
+                btn.innerHTML = '<i class="ri-checkbox-circle-line"></i> Saved Successfully!';
+                btn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="ri-save-line"></i> Save Changes';
+                    btn.style.background = '';
+                    section.classList.remove('save-success');
+                    Modal.close();
+                    Dashboard.refresh();
+                }, 1500);
+            } else {
+                throw new Error('Save failed');
+            }
+
+        } catch (error) {
+            console.error('Error saving workflow:', error);
+            btn.innerHTML = '<i class="ri-error-warning-line"></i> Save Failed - Try Again';
+            btn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="ri-save-line"></i> Save Changes';
+                btn.style.background = '';
+            }, 2000);
+
+        } finally {
+            btn.disabled = false;
+            section.classList.remove('loading');
+        }
+    }
+
+    // Initialize workflow on modal open
+    function initializeWorkflow(claim) {
+        // Set checkbox states
+        document.getElementById('chk_repl_confirmation').checked = claim.replacement_confirmation || false;
+        document.getElementById('chk_repl_osg_approval').checked = claim.replacement_osg_approval || false;
+        document.getElementById('chk_repl_mail_store').checked = claim.replacement_mail_store || false;
+        document.getElementById('chk_repl_invoice_gen').checked = claim.replacement_invoice_gen || false;
+        document.getElementById('chk_repl_invoice_sent').checked = claim.replacement_invoice_sent || false;
+        document.getElementById('chk_repl_settled_accounts').checked = claim.replacement_settled_accounts || false;
+        document.getElementById('chk_complete_repl').checked = claim.complete || false;
+
+        // Update TAT
+        if (claim.tat !== null && claim.tat !== undefined) {
+            document.getElementById('disp_tat').textContent = claim.tat;
+        }
+
+        // Update progress
+        updateWorkflowProgress();
+        updateCompletionStatus();
+    }
+</script>
