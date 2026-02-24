@@ -15,6 +15,35 @@
     </div>
 </div>
 
+<!-- Date Range Filter -->
+<div class="glass-panel date-filter-bar">
+    <div class="date-filter-content">
+        <div class="date-filter-label">
+            <i class="ri-calendar-line"></i>
+            <span>Date Range</span>
+        </div>
+        <div class="date-filter-inputs">
+            <div class="date-input-group">
+                <label for="dateFrom">From</label>
+                <input type="date" id="dateFrom">
+            </div>
+            <div class="date-input-group">
+                <label for="dateTo">To</label>
+                <input type="date" id="dateTo">
+            </div>
+            <button class="btn-apply-date" onclick="applyDateFilter()">
+                <i class="ri-filter-line"></i> Apply
+            </button>
+            <button class="btn-reset-date" onclick="resetDateFilter()">
+                <i class="ri-refresh-line"></i> All Claims
+            </button>
+        </div>
+        <div class="date-filter-info" id="dateFilterInfo">
+            Showing: <strong id="dateRangeLabel">Current Month</strong>
+        </div>
+    </div>
+</div>
+
 <!-- Stats Cards -->
 <div class="stats-grid">
     <div class="stat-card glass-panel" onclick="filterClaims('all')" style="cursor: pointer;">
@@ -70,7 +99,8 @@
             </thead>
             <tbody id="claimsTableBody">
                 {% for claim in claims %}
-                <tr data-completed="{{ 'true' if claim.complete else 'false' }}">
+                <tr data-completed="{{ 'true' if claim.complete else 'false' }}"
+                    data-date="{{ claim.created_at.strftime('%Y-%m-%d') }}">
                     <td>
                         <span class="id-badge clickable" onclick="openClaimModal('{{ claim.claim_id }}')"
                             style="cursor: pointer; color: var(--primary); font-weight: 600;">
@@ -618,6 +648,126 @@
 </template>
 
 <script>
+    // ===== DATE RANGE FILTER =====
+    function initDateFilter() {
+        const now = new Date();
+        // IST offset
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const ist = new Date(utc + (3600000 * 5.5));
+
+        const year = ist.getFullYear();
+        const month = ist.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const today = ist;
+
+        const fromInput = document.getElementById('dateFrom');
+        const toInput = document.getElementById('dateTo');
+
+        fromInput.value = formatDateISO(firstDay);
+        toInput.value = formatDateISO(today);
+
+        // Apply current month filter on load
+        applyDateFilter();
+    }
+
+    function formatDateISO(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+
+    function applyDateFilter() {
+        const fromVal = document.getElementById('dateFrom').value;
+        const toVal = document.getElementById('dateTo').value;
+
+        if (!fromVal || !toVal) {
+            alert('Please select both From and To dates.');
+            return;
+        }
+
+        const fromDate = new Date(fromVal + 'T00:00:00');
+        const toDate = new Date(toVal + 'T23:59:59');
+
+        const rows = document.querySelectorAll('#claimsTableBody tr');
+        let totalVisible = 0;
+        let pendingVisible = 0;
+        let completedVisible = 0;
+        let tatSum = 0;
+        let tatCount = 0;
+
+        rows.forEach(row => {
+            const dateStr = row.getAttribute('data-date');
+            if (!dateStr) return;
+            const rowDate = new Date(dateStr + 'T00:00:00');
+            const isComplete = row.getAttribute('data-completed') === 'true';
+
+            if (rowDate >= fromDate && rowDate <= toDate) {
+                row.style.display = '';
+                totalVisible++;
+                if (isComplete) {
+                    completedVisible++;
+                } else {
+                    pendingVisible++;
+                }
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Update KPI cards
+        updateDashboardKPIs(totalVisible, pendingVisible, completedVisible);
+
+        // Update date range label
+        const fromFormatted = formatDisplayDate(fromVal);
+        const toFormatted = formatDisplayDate(toVal);
+        document.getElementById('dateRangeLabel').textContent = `${fromFormatted} — ${toFormatted}`;
+    }
+
+    function resetDateFilter() {
+        const rows = document.querySelectorAll('#claimsTableBody tr');
+        let total = 0;
+        let pending = 0;
+        let completed = 0;
+
+        rows.forEach(row => {
+            row.style.display = '';
+            total++;
+            if (row.getAttribute('data-completed') === 'true') {
+                completed++;
+            } else {
+                pending++;
+            }
+        });
+
+        // Clear date inputs
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+
+        // Update KPI cards
+        updateDashboardKPIs(total, pending, completed);
+        document.getElementById('dateRangeLabel').textContent = 'All Claims';
+    }
+
+    function updateDashboardKPIs(total, pending, completed) {
+        const statNumbers = document.querySelectorAll('.stat-card .number');
+        if (statNumbers.length >= 3) {
+            statNumbers[0].textContent = total;
+            statNumbers[1].textContent = pending;
+            statNumbers[2].textContent = completed;
+        }
+    }
+
+    function formatDisplayDate(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // Auto-apply current month filter when page loads
+    document.addEventListener('DOMContentLoaded', function () {
+        initDateFilter();
+    });
+
     /**
      * Enhanced Workflow Functions
      */

@@ -247,6 +247,114 @@ body {
     border: 1px solid var(--border-light);
 }
 
+/* 📅 Date Filter Bar */
+.date-filter-bar {
+    margin-bottom: 2rem;
+    padding: 1.25rem 2rem;
+}
+
+.date-filter-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.date-filter-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 1.1rem;
+}
+
+.date-filter-label i {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.date-filter-inputs {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.date-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+.date-input-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.date-input-group input {
+    border: none;
+    outline: none;
+    font-family: inherit;
+    color: var(--text-main);
+    font-weight: 500;
+    background: transparent;
+}
+
+.btn-apply-date,
+.btn-reset-date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-apply-date {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+}
+
+.btn-apply-date:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.btn-reset-date {
+    background: #f1f5f9;
+    color: var(--text-secondary);
+}
+
+.btn-reset-date:hover {
+    background: #e2e8f0;
+    color: var(--text-main);
+}
+
+.date-filter-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    background: rgba(59, 130, 246, 0.05);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.date-filter-info strong {
+    color: var(--primary);
+}
+
 /* 📈 Stats Grid */
 .stats-grid {
     display: grid;
