@@ -560,8 +560,21 @@ def lookup_customer():
     if not mobile or len(mobile) != 10:
         return jsonify({"success": False, "message": "Invalid Number (Must be 10 digits)"})
 
+    # Check if data is still loading in background
+    if REFRESH_THREAD_RUNNING and not CUSTOMER_INDEX['data']:
+        print(f"[LOOKUP] Data still loading, returning loading status")
+        return jsonify({"success": False, "loading": True, "message": "Customer data is loading, please wait..."})
+
     # Get Index (Triggers stale checks if needed)
-    index = load_excel_data()
+    try:
+        index = load_excel_data()
+    except Exception as e:
+        print(f"[LOOKUP] Excel load error: {e}")
+        return jsonify({"success": False, "loading": True, "message": "Data loading in progress, please retry..."})
+    
+    if not index:
+        print(f"[LOOKUP] Empty index returned")
+        return jsonify({"success": False, "loading": True, "message": "Customer database is loading, please wait and retry..."})
     
     customer_data = index.get(mobile)
     

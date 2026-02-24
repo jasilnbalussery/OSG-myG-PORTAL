@@ -147,98 +147,133 @@ async function searchCustomer() {
     window.selectedProducts = [];
     renderClaimForms();
 
-    try {
-        const response = await fetchWithTimeout('/lookup-customer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mobile: mobile })
-        });
+    // Retry logic for when server is still loading data
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 5000; // 5 seconds between retries
+    let lastError = null;
 
-        const data = await response.json();
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetchWithTimeout('/lookup-customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mobile: mobile }),
+                timeout: 45000 // 45s timeout for customer lookup
+            });
 
-        msgBox.classList.add('hidden');
-        formSection.classList.remove('hidden');
+            const data = await response.json();
 
-        if (data.success) {
-            // Found existing customer
-            document.getElementById('disp-name').textContent = data.customer_name;
-            document.getElementById('disp-mobile').textContent = mobile;
-            document.getElementById('hidden_name').value = data.customer_name;
-            document.getElementById('hidden_mobile').value = mobile;
-
-            // Populate Products
-            const productList = document.getElementById('product-list');
-            productList.innerHTML = "";
-
-            if (data.products && data.products.length > 0) {
-                data.products.forEach((prod, index) => {
-                    const el = document.createElement('div');
-                    el.className = 'product-card';
-                    el.dataset.index = index; // Store index for reference
-                    el.innerHTML = `
-                        <h4>${prod.model}</h4>
-                        <p style="font-size:0.8rem; color:#777">Serial: ${prod.serial}</p>
-                        <p style="font-size:0.8rem; color:#777">OSID: ${prod.osid}</p>
-                        <p style="font-size:0.8rem; color:#777">Inv: ${prod.invoice}</p>
-                    `;
-                    el.onclick = () => toggleProductSelection(prod, el);
-                    productList.appendChild(el);
-                });
-            } else {
-                productList.innerHTML = '<p style="color:#777; font-style:italic;">No registered products found. Register a new one below.</p>';
-                // Allow manual entry for existing customer? 
-                // For simplicity, fallback to manual logic if list empty?
-                // Or user can use New Customer flow?
-                // Let's assume list is populated.
+            // If server says data is still loading, retry
+            if (data.loading && attempt < MAX_RETRIES) {
+                msgBox.textContent = `⏳ ${data.message || 'Data loading...'} Retrying (${attempt}/${MAX_RETRIES})...`;
+                msgBox.className = "msg-box info";
+                searchBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Loading... (${attempt}/${MAX_RETRIES})`;
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                continue;
             }
 
-        } else {
-            // New Customer
-            msgBox.textContent = "New Customer! Please enter details.";
-            msgBox.className = "msg-box info";
-            msgBox.classList.remove('hidden');
+            // If still loading on last attempt
+            if (data.loading) {
+                msgBox.textContent = "⏳ Server is loading data. Please wait 30 seconds and try again.";
+                msgBox.className = "msg-box warning";
+                msgBox.classList.remove('hidden');
+                mobileInput.disabled = false;
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = originalBtnText;
+                return;
+            }
 
-            document.getElementById('disp-name').innerHTML = `<input type="text" id="manual_name" placeholder="Enter Name" class="manual-input" onchange="document.getElementById('hidden_name').value = this.value">`;
-            document.getElementById('disp-mobile').textContent = mobile;
-            document.getElementById('hidden_name').value = "";
-            document.getElementById('hidden_mobile').value = mobile;
-            // Render Manual Product Form (Single for now)
-            // We treat it as one selected product
-            const manualProd = { model: '', serial: '', invoice: '', osid: 'MANUAL_ENTRY', isManual: true };
-            window.selectedProducts = [manualProd];
+            msgBox.classList.add('hidden');
+            formSection.classList.remove('hidden');
 
-            document.getElementById('product-list').innerHTML = `
-                <div class="manual-product-form" style="padding:1rem; background:rgba(67, 97, 238, 0.05); border-radius:12px; border:1px solid rgba(67, 97, 238, 0.2);">
-                    <h4 style="margin-bottom:0.8rem; color:var(--primary);">New Product Details</h4>
-                    <div class="input-group" style="display:flex; gap:0.5rem; margin-bottom:0.5rem">
-                         <input type="text" class="manual-input" style="border:1px solid #ddd; padding:0.5rem; border-radius:8px;" placeholder="Model Name" onchange="updateManualProduct(this, 'model')">
-                         <input type="text" class="manual-input" style="border:1px solid #ddd; padding:0.5rem; border-radius:8px;" placeholder="Serial No" onchange="updateManualProduct(this, 'serial')">
+            if (data.success) {
+                // Found existing customer
+                document.getElementById('disp-name').textContent = data.customer_name;
+                document.getElementById('disp-mobile').textContent = mobile;
+                document.getElementById('hidden_name').value = data.customer_name;
+                document.getElementById('hidden_mobile').value = mobile;
+
+                // Populate Products
+                const productList = document.getElementById('product-list');
+                productList.innerHTML = "";
+
+                if (data.products && data.products.length > 0) {
+                    data.products.forEach((prod, index) => {
+                        const el = document.createElement('div');
+                        el.className = 'product-card';
+                        el.dataset.index = index; // Store index for reference
+                        el.innerHTML = `
+                            <h4>${prod.model}</h4>
+                            <p style="font-size:0.8rem; color:#777">Serial: ${prod.serial}</p>
+                            <p style="font-size:0.8rem; color:#777">OSID: ${prod.osid}</p>
+                            <p style="font-size:0.8rem; color:#777">Inv: ${prod.invoice}</p>
+                        `;
+                        el.onclick = () => toggleProductSelection(prod, el);
+                        productList.appendChild(el);
+                    });
+                } else {
+                    productList.innerHTML = '<p style="color:#777; font-style:italic;">No registered products found. Register a new one below.</p>';
+                }
+
+            } else {
+                // New Customer
+                msgBox.textContent = "New Customer! Please enter details.";
+                msgBox.className = "msg-box info";
+                msgBox.classList.remove('hidden');
+
+                document.getElementById('disp-name').innerHTML = `<input type="text" id="manual_name" placeholder="Enter Name" class="manual-input" onchange="document.getElementById('hidden_name').value = this.value">`;
+                document.getElementById('disp-mobile').textContent = mobile;
+                document.getElementById('hidden_name').value = "";
+                document.getElementById('hidden_mobile').value = mobile;
+                const manualProd = { model: '', serial: '', invoice: '', osid: 'MANUAL_ENTRY', isManual: true };
+                window.selectedProducts = [manualProd];
+
+                document.getElementById('product-list').innerHTML = `
+                    <div class="manual-product-form" style="padding:1rem; background:rgba(67, 97, 238, 0.05); border-radius:12px; border:1px solid rgba(67, 97, 238, 0.2);">
+                        <h4 style="margin-bottom:0.8rem; color:var(--primary);">New Product Details</h4>
+                        <div class="input-group" style="display:flex; gap:0.5rem; margin-bottom:0.5rem">
+                             <input type="text" class="manual-input" style="border:1px solid #ddd; padding:0.5rem; border-radius:8px;" placeholder="Model Name" onchange="updateManualProduct(this, 'model')">
+                             <input type="text" class="manual-input" style="border:1px solid #ddd; padding:0.5rem; border-radius:8px;" placeholder="Serial No" onchange="updateManualProduct(this, 'serial')">
+                        </div>
+                        <div class="input-group">
+                             <input type="text" class="manual-input" style="border:1px solid #ddd; padding:0.5rem; border-radius:8px; width:100%;" placeholder="Invoice No" onchange="updateManualProduct(this, 'invoice')">
+                        </div>
                     </div>
-                    <div class="input-group">
-                         <input type="text" class="manual-input" style="border:1px solid #ddd; padding:0.5rem; border-radius:8px; width:100%;" placeholder="Invoice No" onchange="updateManualProduct(this, 'invoice')">
-                    </div>
-                </div>
-            `;
+                `;
 
-            window.updateManualProduct = function (el, field) {
-                window.selectedProducts[0][field] = el.value;
-                // Re-render only if needed, but here inputs are live.
-                // We need to render the CLAIM FORM for this manual product immediately?
-                renderClaimForms(); // To show Issue/Upload inputs
-            };
+                window.updateManualProduct = function (el, field) {
+                    window.selectedProducts[0][field] = el.value;
+                    renderClaimForms();
+                };
 
-            renderClaimForms();
+                renderClaimForms();
+            }
+            // Success - break out of retry loop
+            mobileInput.disabled = false;
+            searchBtn.disabled = false;
+            searchBtn.innerHTML = originalBtnText;
+            return;
+
+        } catch (e) {
+            lastError = e;
+            console.error(`Search attempt ${attempt} failed:`, e);
+            if (attempt < MAX_RETRIES) {
+                msgBox.textContent = `⏳ Connection issue, retrying (${attempt}/${MAX_RETRIES})...`;
+                msgBox.className = "msg-box info";
+                searchBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> Retrying (${attempt}/${MAX_RETRIES})...`;
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            }
         }
-    } catch (e) {
-        msgBox.textContent = "Server Timeout or Error. Please check connection.";
-        msgBox.className = "msg-box error";
-        msgBox.classList.remove('hidden');
-        console.error(e);
-    } finally {
-        mobileInput.disabled = false;
-        searchBtn.disabled = false;
-        searchBtn.innerHTML = originalBtnText;
     }
+
+    // All retries exhausted
+    msgBox.textContent = "Server Timeout or Error. Please wait a moment and try again.";
+    msgBox.className = "msg-box error";
+    msgBox.classList.remove('hidden');
+    console.error('All retries exhausted:', lastError);
+    mobileInput.disabled = false;
+    searchBtn.disabled = false;
+    searchBtn.innerHTML = originalBtnText;
 }
 
 // Toggle Selection
