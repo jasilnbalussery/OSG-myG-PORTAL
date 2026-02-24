@@ -2071,20 +2071,39 @@ def export_claims_excel():
 # STARTUP TASKS
 # ----------------------
 def preload_data():
+    """Synchronous task to load data into memory on server start"""
+    print("[STARTUP] Pre-loading customer data (BLOCKING - server waits)...")
+    try:
+        result = load_excel_data()
+        if result:
+            print(f"[STARTUP] ✅ Customer data pre-loaded successfully. Index size: {len(result)}")
+        else:
+            print("[STARTUP] ⚠️ Customer data returned empty (Excel file may be missing)")
+    except Exception as e:
+        print(f"[STARTUP] ❌ Pre-load failed: {e}")
+        import traceback
+        traceback.print_exc()
 
-    """Background task to load data into memory on server start"""
-    with app.app_context():
-        print("[STARTUP] Pre-loading customer data...")
+def cache_keep_warm():
+    """Periodic task to keep the customer data cache warm"""
+    import time as _time
+    while True:
+        _time.sleep(300)  # Every 5 minutes
         try:
-            load_excel_data()
-            print("[STARTUP] Customer data pre-loaded successfully.")
+            with app.app_context():
+                if not CUSTOMER_INDEX['data']:
+                    print("[CACHE-WARM] Cache is cold, reloading...")
+                    load_excel_data()
+                    print(f"[CACHE-WARM] ✅ Cache rewarmed. Size: {len(CUSTOMER_INDEX['data'])}")
         except Exception as e:
-            print(f"[STARTUP] Pre-load failed: {e}")
+            print(f"[CACHE-WARM] Error: {e}")
 
-# Start background thread for pre-loading
-# checking if not in reloader to avoid double load in debug mode
+# SYNCHRONOUS preload - server won't accept requests until data is ready
+# This is critical for Render deployments
 if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug:
-    threading.Thread(target=preload_data).start()
+    preload_data()
+    # Start background keep-warm thread
+    threading.Thread(target=cache_keep_warm, daemon=True).start()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
