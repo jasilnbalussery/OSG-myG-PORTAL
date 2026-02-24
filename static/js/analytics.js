@@ -785,8 +785,9 @@ function filterByCard(cardType) {
             filteredClaims = [...allClaims];
     }
 
-    // Only update the claims table and counts, not charts (to keep page performant)
+    // Update the claims table, KPIs, and counts
     updateClaimsTable();
+    updateKPIs();
 
     // Scroll to All Claims table
     const tableSection = document.getElementById('claimsAnalyticsTable');
