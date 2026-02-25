@@ -31,12 +31,12 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 DB_FILE = os.path.join(BASE_DIR, "claims.db")
 
 # Email Config
-TARGET_EMAIL = "sarath.k@myg.in"
-CC_EMAILS = ["mygloyalty3@gmail.com"]
+TARGET_EMAIL = "shyla.mariadhasan@onsite.co.in"
+CC_EMAILS = ["shine.at@onsite.co.in", "akhilmp@myg.in","sachin.kadam@onsite.co.in","shanmugaraja.a@onsite.co.in","akhil.chandran@onsite.co.in","jasil@myg.in"]
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = "jasil@myg.in"
-SENDER_PASSWORD = "vurw qnwv ynys xkrf"
+SENDER_EMAIL = "sarath.k@myg.in"
+SENDER_PASSWORD = "iwpp yytv scrs ncan"
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxiAe_F3lcG9kNyvcbYcETC8Rc4ZZ3O-o3CdgPfmbjpQj8_cby9FMP9f33M1LenQ006VA/exec"
 
 app = Flask(__name__)
