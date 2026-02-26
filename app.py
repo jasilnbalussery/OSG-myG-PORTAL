@@ -51,8 +51,10 @@ db = SQLAlchemy(app)
 # ----------------------
 # AUTHENTICATION
 # ----------------------
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "password123"
+USERS = {
+    "admin": {"password": "password123", "role": "admin", "display": "Admin Manager"},
+    "customercare": {"password": "care123", "role": "customercare", "display": "Customer Care"}
+}
 
 def login_required(f):
     @wraps(f)
@@ -62,21 +64,50 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_logged_in' not in session:
+            return redirect(url_for('login', next=request.url))
+        if session.get('role') != 'admin':
+            flash('Access denied. Admin privileges required.', 'error')
+            return redirect(url_for('claim_status'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def customercare_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_logged_in' not in session:
+            return redirect(url_for('login', next=request.url))
+        if session.get('role') != 'customercare':
+            flash('Access denied.', 'error')
+            return redirect(url_for('dashboard'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
-            session.permanent = True  # Enable permanent session (24h)
+        user = USERS.get(username)
+        if user and user['password'] == password:
+            session.permanent = True
             session['user_logged_in'] = True
             session['username'] = username
+            session['role'] = user['role']
+            session['display_name'] = user['display']
             flash('Login successful!', 'success')
             
-            # Redirect to next page if it exists
+            # Redirect based on role
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('dashboard'))
+            if next_page:
+                return redirect(next_page)
+            if user['role'] == 'customercare':
+                return redirect(url_for('claim_status'))
+            return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password', 'error')
     
@@ -86,6 +117,8 @@ def login():
 def logout():
     session.pop('user_logged_in', None)
     session.pop('username', None)
+    session.pop('role', None)
+    session.pop('display_name', None)
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
@@ -330,7 +363,7 @@ def fetch_claims_from_sheet(force_refresh=False):
 # ROUTES
 # ----------------------
 @app.route('/')
-@login_required
+@admin_required
 def dashboard():
     refresh = request.args.get('refresh') == 'true'
     claims = fetch_claims_from_sheet(force_refresh=refresh)
@@ -659,7 +692,7 @@ def send_email_notification(claim_data, files=None):
 
 
 @app.route('/submit-claim', methods=['GET', 'POST'])
-@login_required
+@admin_required
 def submit_claim():
     if request.method == 'GET':
         return render_template('submit.html')
@@ -995,9 +1028,85 @@ def debug_sheet_columns():
 # ANALYTICS ROUTES
 # ----------------------
 @app.route('/analytics')
-@login_required
+@admin_required
 def analytics_dashboard():
     return render_template('analytics.html')
+
+# ----------------------
+# CLAIM STATUS (Customer Care)
+# ----------------------
+@app.route('/claim-status')
+@login_required
+def claim_status():
+    return render_template('claim_status.html')
+
+@app.route('/api/claim-status-lookup', methods=['POST'])
+@login_required
+def claim_status_lookup():
+    """Search claims by mobile number or claim ID for customer care"""
+    try:
+        data = request.json
+        search_type = data.get('search_type', 'mobile')
+        search_value = data.get('search_value', '').strip()
+        
+        if not search_value:
+            return jsonify({'success': False, 'message': 'Search value is required'})
+        
+        claims = fetch_claims_from_sheet()
+        matched = []
+        
+        def parse_bool(val):
+            if val is None or val == '':
+                return False
+            return str(val).strip().lower() in ['yes', 'true', '1']
+        
+        for c in claims:
+            if search_type == 'mobile':
+                mobile = str(c.mobile_no or '').strip()
+                if mobile == search_value:
+                    matched.append(c)
+            else:
+                claim_id = str(c.claim_id or '').strip().lower()
+                if search_value.lower() in claim_id:
+                    matched.append(c)
+        
+        if not matched:
+            return jsonify({'success': False, 'message': 'No claims found'})
+        
+        results = []
+        for c in matched:
+            results.append({
+                'claim_id': c.claim_id,
+                'submitted_date': c.created_at.strftime('%Y-%m-%d') if c.created_at else '',
+                'customer_name': c.customer_name or '',
+                'mobile_number': c.mobile_no or '',
+                'product': c.model or '',
+                'model': c.model or '',
+                'status': c.status or '',
+                'osid': c.osid or '',
+                'sr_no': c.sr_no or '',
+                'invoice_no': c.invoice_no or '',
+                'branch': c.branch or '',
+                'issue': c.issue or '',
+                'claim_settled_date': c.claim_settled_date or '',
+                'follow_up_notes': c.follow_up_notes or '',
+                'follow_up_date': c.follow_up_date or '',
+                'tat': c.tat,
+                'complete': c.complete,
+                'replacement_confirmation': parse_bool(c.data.get("Customer Confirmation")),
+                'replacement_osg_approval': parse_bool(c.data.get("Approval Mail Received From Onsitego (Yes/No)")),
+                'replacement_mail_store': parse_bool(c.data.get("Mail Sent To Store (Yes/No)")),
+                'replacement_invoice_gen': parse_bool(c.data.get("Invoice Generated (Yes/No)")),
+                'replacement_invoice_sent': parse_bool(c.data.get("Invoice Sent To Onsitego (Yes/No)")),
+                'replacement_settled_accounts': parse_bool(c.data.get("Settled With Accounts (Yes/No)")),
+            })
+        
+        return jsonify({'success': True, 'claims': results})
+    except Exception as e:
+        print(f"Claim status lookup error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/api/analytics-data')
 @login_required
@@ -1093,7 +1202,7 @@ def get_analytics_data():
 # REPORTS & TOOLS ROUTES
 # ----------------------
 @app.route('/reports')
-@login_required
+@admin_required
 def reports_tools():
     today = datetime.datetime.now().strftime('%Y-%m-%d')
     month_start = datetime.datetime.now().replace(day=1).strftime('%Y-%m-%d')

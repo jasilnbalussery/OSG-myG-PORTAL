@@ -117,6 +117,21 @@ function updateKPIs() {
     if (kpiClosedEl) kpiClosedEl.textContent = closedClaims.length;
 
 
+    // Rejected Claims
+    const rejectedClaims = claims.filter(c => {
+        const s = (c.status || '').toLowerCase();
+        return s === 'rejected';
+    });
+    const kpiRejectedEl = document.getElementById('kpi-rejected');
+    if (kpiRejectedEl) kpiRejectedEl.textContent = rejectedClaims.length;
+
+    // No Issue / On Call Resolution
+    const noIssueClaims = claims.filter(c => {
+        const s = (c.status || '').toLowerCase();
+        return s === 'no issue' || s === 'on call resolution' || s === 'no issue/on call resolution' || s === 'no issue / on call resolution';
+    });
+    const kpiNoIssueEl = document.getElementById('kpi-no-issue');
+    if (kpiNoIssueEl) kpiNoIssueEl.textContent = noIssueClaims.length;
 
     // Today's New Claims
     const today = new Date().toISOString().split('T')[0];
@@ -722,7 +737,9 @@ function filterByCard(cardType) {
         'settled': '— Replacement Completed',
         'closed': '— Closed',
         'today': "— Today's New",
-        'month': '— This Month'
+        'month': '— This Month',
+        'rejected': '— Rejected',
+        'no-issue': '— No Issue / On Call Resolution'
     };
     if (labelEl) {
         labelEl.textContent = labelMap[cardType] || '';
@@ -780,6 +797,15 @@ function filterByCard(cardType) {
             filteredClaims = allClaims.filter(c =>
                 c.submitted_date && c.submitted_date >= monthStart
             );
+            break;
+        case 'rejected':
+            filteredClaims = allClaims.filter(c => (c.status || '').toLowerCase() === 'rejected');
+            break;
+        case 'no-issue':
+            filteredClaims = allClaims.filter(c => {
+                const s = (c.status || '').toLowerCase();
+                return s === 'no issue' || s === 'on call resolution' || s === 'no issue/on call resolution' || s === 'no issue / on call resolution';
+            });
             break;
         default:
             filteredClaims = [...allClaims];

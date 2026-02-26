@@ -190,6 +190,30 @@
                 <p class="kpi-subtitle">Monthly total</p>
             </div>
         </div>
+
+        <div class="kpi-card glass-panel red" id="card-rejected" onclick="filterByCard('rejected')"
+            style="cursor:pointer;">
+            <div class="kpi-icon">
+                <i class="ri-close-circle-line"></i>
+            </div>
+            <div class="kpi-content">
+                <h4>Rejected</h4>
+                <div class="kpi-value" id="kpi-rejected">0</div>
+                <p class="kpi-subtitle">Claims rejected</p>
+            </div>
+        </div>
+
+        <div class="kpi-card glass-panel teal" id="card-no-issue" onclick="filterByCard('no-issue')"
+            style="cursor:pointer;">
+            <div class="kpi-icon">
+                <i class="ri-phone-line"></i>
+            </div>
+            <div class="kpi-content">
+                <h4>No Issue / On Call</h4>
+                <div class="kpi-value" id="kpi-no-issue">0</div>
+                <p class="kpi-subtitle">Resolved on call</p>
+            </div>
+        </div>
     </div>
 
     <!-- 🔹 3 & 4. CHARTS ROW -->

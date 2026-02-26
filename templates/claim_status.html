@@ -1,0 +1,389 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="claim-status-container">
+    <!-- Page Header -->
+    <div class="claim-status-header">
+        <div>
+            <h1><i class="ri-search-eye-line"></i> Claim Status</h1>
+            <p>Track customer claim status for quick support</p>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section glass-panel">
+        <h3><i class="ri-search-2-line"></i> Search Claims</h3>
+
+        <!-- Search Type Toggle -->
+        <div class="search-toggle-group">
+            <button class="search-toggle-btn active" id="toggle-mobile" onclick="setSearchType('mobile')">
+                <i class="ri-phone-line"></i> Mobile Number
+            </button>
+            <button class="search-toggle-btn" id="toggle-claim-id" onclick="setSearchType('claim_id')">
+                <i class="ri-file-search-line"></i> Claim ID
+            </button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="search-input-row">
+            <div class="search-input-wrapper">
+                <label id="searchLabel">Mobile Number</label>
+                <input type="text" id="searchInput" placeholder="Enter 10-digit mobile number..." maxlength="20"
+                    onkeypress="if(event.key==='Enter') searchClaim()">
+            </div>
+            <button class="btn-search" id="btnSearch" onclick="searchClaim()">
+                <i class="ri-search-line"></i> Search
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Area -->
+    <div id="resultsArea">
+        <!-- Default empty state -->
+        <div class="search-section glass-panel">
+            <div class="empty-state-block">
+                <i class="ri-customer-service-2-line"></i>
+                <h3>Search for a Claim</h3>
+                <p>Enter a customer's mobile number or claim ID to view their claim status</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let searchType = 'mobile';
+
+    function setSearchType(type) {
+        searchType = type;
+        // Toggle button state
+        document.getElementById('toggle-mobile').classList.toggle('active', type === 'mobile');
+        document.getElementById('toggle-claim-id').classList.toggle('active', type === 'claim_id');
+
+        // Update label and placeholder
+        const label = document.getElementById('searchLabel');
+        const input = document.getElementById('searchInput');
+
+        if (type === 'mobile') {
+            label.textContent = 'Mobile Number';
+            input.placeholder = 'Enter 10-digit mobile number...';
+            input.maxLength = 10;
+        } else {
+            label.textContent = 'Claim ID';
+            input.placeholder = 'Enter Claim ID (e.g. CLM-1234567890)...';
+            input.maxLength = 30;
+        }
+
+        input.value = '';
+        input.focus();
+    }
+
+    async function searchClaim() {
+        const input = document.getElementById('searchInput');
+        const value = input.value.trim();
+
+        if (!value) {
+            input.focus();
+            return;
+        }
+
+        if (searchType === 'mobile' && (value.length < 10 || !/^\d+$/.test(value))) {
+            showError('Please enter a valid 10-digit mobile number');
+            return;
+        }
+
+        // Show loading
+        document.getElementById('resultsArea').innerHTML = `
+            <div class="search-section glass-panel">
+                <div class="search-loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        `;
+
+        try {
+            const response = await fetch('/api/claim-status-lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ search_type: searchType, search_value: value })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.claims && data.claims.length > 0) {
+                renderResults(data.claims, value);
+            } else {
+                showEmpty(value);
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+            showError('Failed to search. Please try again.');
+        }
+    }
+
+    function renderResults(claims, searchValue) {
+        let html = `
+            <div class="results-section">
+                <div class="results-count">
+                    Found <strong>${claims.length}</strong> claim${claims.length > 1 ? 's' : ''}
+                    for "${searchValue}"
+                </div>
+        `;
+
+        claims.forEach(claim => {
+            const statusClass = getStatusClass(claim.status);
+            const timeline = buildTimeline(claim);
+            const replacementHtml = buildReplacementProgress(claim);
+
+            html += `
+                <div class="status-card">
+                    <div class="status-card-header">
+                        <span class="claim-id"><i class="ri-file-shield-2-line"></i> ${claim.claim_id}</span>
+                        <span class="claim-date"><i class="ri-calendar-line"></i> ${formatDate(claim.submitted_date)}</span>
+                    </div>
+                    <div class="status-card-body">
+                        <!-- Info Grid -->
+                        <div class="status-info-grid">
+                            <div class="status-info-item">
+                                <label>Customer Name</label>
+                                <div class="info-val">${claim.customer_name || '-'}</div>
+                            </div>
+                            <div class="status-info-item">
+                                <label>Mobile Number</label>
+                                <div class="info-val">${claim.mobile_number || '-'}</div>
+                            </div>
+                            <div class="status-info-item">
+                                <label>Product / Model</label>
+                                <div class="info-val">${claim.product || claim.model || '-'}</div>
+                            </div>
+                            <div class="status-info-item">
+                                <label>Status</label>
+                                <div class="info-val">
+                                    <span class="claim-status-pill ${statusClass}">${claim.status}</span>
+                                </div>
+                            </div>
+                            <div class="status-info-item">
+                                <label>OSID</label>
+                                <div class="info-val">${claim.osid || '-'}</div>
+                            </div>
+                            <div class="status-info-item">
+                                <label>SR Number</label>
+                                <div class="info-val">${claim.sr_no || '-'}</div>
+                            </div>
+                            <div class="status-info-item">
+                                <label>Invoice Number</label>
+                                <div class="info-val">${claim.invoice_no || '-'}</div>
+                            </div>
+                            <div class="status-info-item">
+                                <label>Branch</label>
+                                <div class="info-val">${claim.branch || '-'}</div>
+                            </div>
+                            <div class="status-info-item" style="grid-column: span 2;">
+                                <label><i class="ri-history-line" style="margin-right:4px;"></i>Latest Follow Up</label>
+                                <div class="info-val follow-up-box" style="background:#f9fafb;padding:0.75rem 1rem;border-radius:8px;margin-top:0.35rem;font-size:0.88rem;line-height:1.6;color:#4b5563;word-wrap:break-word;">
+                                    ${claim.follow_up_notes ? getLatestFollowUp(claim.follow_up_notes) : '<span style="color:#9ca3af;font-style:italic;">No follow-up notes yet</span>'}
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Issue -->
+                        <div class="status-info-item" style="margin-bottom: 1rem;">
+                            <label>Issue Description</label>
+                            <div class="info-val" style="background:#f9fafb;padding:0.75rem 1rem;border-radius:8px;margin-top:0.35rem;">
+                                ${claim.issue || 'No description provided'}
+                            </div>
+                        </div>
+
+                        <!-- Timeline -->
+                        ${timeline}
+
+                        <!-- Replacement Progress (if applicable) -->
+                        ${replacementHtml}
+
+                        <!-- Key Dates -->
+                        <div class="key-dates-row">
+                            <div class="key-date-badge">
+                                <i class="ri-calendar-check-line"></i>
+                                Submitted: <strong>${formatDate(claim.submitted_date)}</strong>
+                            </div>
+                            ${claim.claim_settled_date ? `
+                            <div class="key-date-badge">
+                                <i class="ri-checkbox-circle-line"></i>
+                                Settled: <strong>${claim.claim_settled_date}</strong>
+                            </div>` : ''}
+                            ${claim.tat ? `
+                            <div class="key-date-badge">
+                                <i class="ri-timer-flash-line"></i>
+                                TAT: <strong>${claim.tat} days</strong>
+                            </div>` : ''}
+                            <div class="key-date-badge">
+                                <i class="${claim.complete ? 'ri-checkbox-circle-fill' : 'ri-checkbox-blank-circle-line'}"></i>
+                                Completion: <strong>${claim.complete ? '✅ Completed' : '⏳ In Progress'}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        document.getElementById('resultsArea').innerHTML = html;
+    }
+
+    function buildTimeline(claim) {
+        const status = (claim.status || '').toLowerCase();
+
+        // Define timeline steps and their completion states
+        const steps = [
+            { label: 'Submitted', icon: '1', done: true },
+            { label: 'Registered', icon: '2', done: isAtOrPast(status, 'registered') },
+            { label: 'In Progress', icon: '3', done: isAtOrPast(status, 'in_progress') },
+            { label: 'Resolved', icon: '4', done: claim.complete }
+        ];
+
+        // Find the current active step
+        let activeIdx = 0;
+        for (let i = steps.length - 1; i >= 0; i--) {
+            if (steps[i].done) {
+                activeIdx = i;
+                break;
+            }
+        }
+
+        let html = '<div class="status-timeline">';
+        steps.forEach((step, idx) => {
+            const state = step.done ? 'completed' : (idx === activeIdx + 1 ? 'active' : '');
+
+            html += `
+                <div class="timeline-step ${state}">
+                    <div class="step-dot">
+                        ${step.done ? '<i class="ri-check-line"></i>' : step.icon}
+                    </div>
+                    <div class="step-label">${step.label}</div>
+                </div>
+            `;
+
+            // Add connector between steps (not after last)
+            if (idx < steps.length - 1) {
+                const connState = step.done && steps[idx + 1].done ? 'completed' :
+                    (step.done && !steps[idx + 1].done ? 'active' : '');
+                html += `<div class="timeline-connector ${connState}"></div>`;
+            }
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function isAtOrPast(status, stage) {
+        const order = ['submitted', 'registered', 'follow up', 'repair completed',
+            'replacement approved', 'replacement completed', 'closed',
+            'rejected', 'no issue'];
+        const progressStages = {
+            'submitted': ['submitted'],
+            'registered': ['registered', 'follow up', 'repair completed', 'replacement approved',
+                'replacement completed', 'closed'],
+            'in_progress': ['follow up', 'repair completed', 'replacement approved',
+                'replacement completed', 'closed']
+        };
+
+        const validStages = progressStages[stage] || [];
+        return validStages.some(s => status.includes(s));
+    }
+
+    function buildReplacementProgress(claim) {
+        // Only show for replacement claims
+        const status = (claim.status || '').toLowerCase();
+        if (!status.includes('replacement')) return '';
+
+        const steps = [
+            { label: 'Customer Confirmation', done: claim.replacement_confirmation },
+            { label: 'OSG Approval', done: claim.replacement_osg_approval },
+            { label: 'Mail Sent to Store', done: claim.replacement_mail_store },
+            { label: 'Invoice Generated', done: claim.replacement_invoice_gen },
+            { label: 'Invoice Sent to Onsitego', done: claim.replacement_invoice_sent },
+            { label: 'Settled with Accounts', done: claim.replacement_settled_accounts }
+        ];
+
+        const completedCount = steps.filter(s => s.done).length;
+
+        let html = `
+            <div class="replacement-progress-section">
+                <h4><i class="ri-exchange-line"></i> Replacement Workflow (${completedCount}/6 completed)</h4>
+                <div class="replacement-steps">
+        `;
+
+        steps.forEach(step => {
+            html += `
+                <div class="repl-step ${step.done ? 'done' : 'pending'}">
+                    <div class="step-check">
+                        ${step.done ? '<i class="ri-check-line"></i>' : '<i class="ri-time-line"></i>'}
+                    </div>
+                    <span>${step.label}</span>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+        return html;
+    }
+
+    function getStatusClass(status) {
+        if (!status) return '';
+        const s = status.toLowerCase();
+        if (s === 'submitted') return 'submitted';
+        if (s === 'registered') return 'registered';
+        if (s.includes('follow')) return 'follow-up';
+        if (s.includes('repair')) return 'repair-completed';
+        if (s.includes('replacement')) return 'replacement-approved';
+        if (s === 'closed') return 'closed';
+        if (s === 'rejected') return 'rejected';
+        if (s.includes('no issue') || s.includes('on call')) return 'no-issue';
+        return '';
+    }
+
+    function getLatestFollowUp(notes) {
+        if (!notes) return '';
+        // Notes are formatted as: [date, time] message\n[date, time] message...
+        // Split by timestamp pattern and get the last entry
+        const entries = notes.split(/(?=\[)/);
+        const latest = entries.filter(e => e.trim()).pop();
+        if (!latest) return notes.trim();
+        // Clean up: trim each line to remove leading whitespace
+        return latest.split('\n').map(line => line.trim()).filter(l => l).join('\n');
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch {
+            return dateStr;
+        }
+    }
+
+    function showEmpty(value) {
+        document.getElementById('resultsArea').innerHTML = `
+            <div class="search-section glass-panel">
+                <div class="empty-state-block">
+                    <i class="ri-file-unknow-line"></i>
+                    <h3>No Claims Found</h3>
+                    <p>No claims found for "${value}". Please check and try again.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function showError(msg) {
+        document.getElementById('resultsArea').innerHTML = `
+            <div class="search-section glass-panel">
+                <div class="empty-state-block">
+                    <i class="ri-error-warning-line" style="color: #ef4444;"></i>
+                    <h3>Error</h3>
+                    <p>${msg}</p>
+                </div>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=minimal">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}?v=minimal">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/workflow_enhanced.css') }}?v=minimal">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/claim_status.css') }}?v=minimal">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -35,6 +36,7 @@
             </div>
 
             <nav class="nav-menu">
+                {% if session.get('role') == 'admin' %}
                 <a href="{{ url_for('dashboard') }}"
                     class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
                     <i class="ri-dashboard-line"></i> Dashboard
@@ -46,17 +48,22 @@
                 <a href="{{ url_for('reports_tools') }}"
                     class="nav-item {% if request.endpoint == 'reports_tools' %}active{% endif %}">
                     <i class="ri-file-chart-line"></i> Reports
-                    <a href="{{ url_for('submit_claim') }}"
-                        class="nav-item {% if request.endpoint == 'submit_claim' %}active{% endif %}">
-                        <i class="ri-add-circle-line"></i> New Claim
-                    </a>
+                </a>
+                <a href="{{ url_for('submit_claim') }}"
+                    class="nav-item {% if request.endpoint == 'submit_claim' %}active{% endif %}">
+                    <i class="ri-add-circle-line"></i> New Claim
+                </a>
+                {% endif %}
+                <a href="{{ url_for('claim_status') }}"
+                    class="nav-item {% if request.endpoint == 'claim_status' %}active{% endif %}">
+                    <i class="ri-search-eye-line"></i> Claim Status
+                </a>
             </nav>
 
             <div class="user-profile">
-                <div class="user-avatar">{{ session.get('username', 'Admin')[:2]|upper }}</div>
+                <div class="user-avatar">{{ session.get('display_name', session.get('username', 'U'))[:2]|upper }}</div>
                 <div class="user-info">
-                    <span class="name">{{ session.get('username', 'Admin User')|capitalize }}</span>
-                    <span class="role">Manager</span>
+                    <span class="name">{{ session.get('display_name', session.get('username', 'User')) }}</span>
                 </div>
                 <a href="{{ url_for('logout') }}" class="logout-btn" title="Logout">
                     <i class="ri-logout-box-r-line"></i>
