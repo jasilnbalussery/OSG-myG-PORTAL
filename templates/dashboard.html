@@ -101,7 +101,8 @@
             <tbody id="claimsTableBody">
                 {% for claim in claims %}
                 <tr data-completed="{{ 'true' if claim.complete else 'false' }}"
-                    data-date="{{ claim.created_at.strftime('%Y-%m-%d') }}">
+                    data-date="{{ claim.created_at.strftime('%Y-%m-%d') }}"
+                    data-tat="{{ claim.tat if claim.tat is not none else '' }}">
                     <td>
                         <span class="id-badge clickable" onclick="openClaimModal('{{ claim.claim_id }}')"
                             style="cursor: pointer; color: var(--primary); font-weight: 600;">
@@ -722,13 +723,20 @@
                 } else {
                     pendingVisible++;
                 }
+                const tatVal = row.getAttribute('data-tat');
+                if (tatVal && tatVal !== 'None' && tatVal !== '') {
+                    tatSum += parseInt(tatVal);
+                    tatCount++;
+                }
             } else {
                 row.style.display = 'none';
             }
         });
 
+        const avgTat = tatCount > 0 ? Math.round(tatSum / tatCount) : 0;
+
         // Update KPI cards
-        updateDashboardKPIs(totalVisible, pendingVisible, completedVisible);
+        updateDashboardKPIs(totalVisible, pendingVisible, completedVisible, avgTat);
 
         // Update date range label
         const fromFormatted = formatDisplayDate(fromVal);
@@ -741,6 +749,8 @@
         let total = 0;
         let pending = 0;
         let completed = 0;
+        let tatSum = 0;
+        let tatCount = 0;
 
         rows.forEach(row => {
             row.style.display = '';
@@ -750,23 +760,33 @@
             } else {
                 pending++;
             }
+            const tatVal = row.getAttribute('data-tat');
+            if (tatVal && tatVal !== 'None' && tatVal !== '') {
+                tatSum += parseInt(tatVal);
+                tatCount++;
+            }
         });
+
+        const avgTat = tatCount > 0 ? Math.round(tatSum / tatCount) : 0;
 
         // Clear date inputs
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
 
         // Update KPI cards
-        updateDashboardKPIs(total, pending, completed);
+        updateDashboardKPIs(total, pending, completed, avgTat);
         document.getElementById('dateRangeLabel').textContent = 'All Claims';
     }
 
-    function updateDashboardKPIs(total, pending, completed) {
+    function updateDashboardKPIs(total, pending, completed, avgTat = null) {
         const statNumbers = document.querySelectorAll('.stat-card .number');
         if (statNumbers.length >= 3) {
             statNumbers[0].textContent = total;
             statNumbers[1].textContent = pending;
             statNumbers[2].textContent = completed;
+        }
+        if (statNumbers.length >= 4 && avgTat !== null) {
+            statNumbers[3].innerHTML = `${avgTat} <span style="font-size: 0.9rem; color: #6b7280; font-weight: 500;">Days</span>`;
         }
     }
 
