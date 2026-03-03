@@ -128,7 +128,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <span class="status-pill {{ claim.status|lower|replace(' ', '-') }}">
+                        <span class="status-pill {{ claim.status|lower|replace(' ', '-')|replace('/', '-') }}">
                             {{ claim.status }}
                         </span>
                     <td>
@@ -431,7 +431,8 @@
                     <option value="Follow Up">Follow Up</option>
                     <option value="Repair Completed">Repair Completed</option>
                     <option value="Replacement approved">Replacement Approved</option>
-                    <option value="Closed">Closed</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="No Issue/Oncall Resolution">No Issue/Oncall Resolution</option>
                 </select>
             </div>
         </div>

@@ -411,14 +411,21 @@ const Dashboard = {
     },
 
     getStatusClass(status) {
+        const s = status?.toLowerCase() || '';
         const statusMap = {
             'registered': 'registered',
             'follow up': 'follow-up',
             'replacement approved': 'completed',
             'settled': 'completed',
-            'closed': 'closed'
+            'closed': 'closed',
+            'rejected': 'danger',
+            'no issue': 'secondary',
+            'oncall resolution': 'secondary'
         };
-        return statusMap[status?.toLowerCase()] || 'registered';
+        // Check for "no issue" substrings
+        if (s.includes('no issue')) return 'secondary';
+
+        return statusMap[s] || 'registered';
     }
 };
 

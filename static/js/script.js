@@ -35,9 +35,9 @@ function renderWorkflowList(data) {
         const hasNotes = data.follow_up_notes && data.follow_up_notes.length > 0;
         steps.push({ label: "Customer Follow Up", customDone: hasNotes });
 
-    } else if (status === 'closed') {
-        // Closed status step
-        steps.push({ label: "Claim Closed", customDone: true });
+    } else if (status === 'closed' || status === 'rejected' || status.includes('no issue')) {
+        // Resolved status step
+        steps.push({ label: "Claim Resolved", customDone: true });
 
     } else if (status === 'submitted') {
         steps.push({ label: "Claim Submitted", customDone: true });
@@ -629,8 +629,8 @@ function checkStatusUI() {
         switchTab('workflow');
         if (wfReplacement) wfReplacement.classList.remove('hidden');
     }
-    else if (status === 'Closed') {
-        // Closed: Show Tabs
+    else if (status === 'Closed' || status === 'Rejected' || status.includes('No Issue')) {
+        // Resolved: Show Tabs
         switchTab('info');
         showAllInfo();
     }
@@ -699,8 +699,8 @@ async function saveClaimChanges() {
     const cmp2 = document.getElementById('chk_complete_repl') ? document.getElementById('chk_complete_repl').checked : false;
     let isComplete = cmp1 || cmp2;
 
-    // Auto-mark as complete if status is Closed
-    if (payload.status === 'Closed') {
+    // Auto-mark as complete if status is Closed, Rejected or No Issue
+    if (payload.status === 'Closed' || payload.status === 'Rejected' || payload.status.includes('No Issue')) {
         isComplete = true;
     }
 

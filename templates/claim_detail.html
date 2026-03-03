@@ -66,9 +66,9 @@
                             Repair Completed</option>
                         <option value="Follow Up" {% if claim.status=='Follow Up' %}selected{% endif %}>Follow Up
                         </option>
-                        <option value="Claim Settled" {% if claim.status=='Claim Settled' %}selected{% endif %}>Claim
-                            Settled</option>
-                        <option value="Closed" {% if claim.status=='Closed' %}selected{% endif %}>Closed</option>
+                        <option value="Rejected" {% if claim.status=='Rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="No Issue/Oncall Resolution" {% if claim.status=='No Issue/Oncall Resolution'
+                            %}selected{% endif %}>No Issue/Oncall Resolution</option>
                     </select>
                 </div>
             </div>

@@ -67,8 +67,8 @@ function updateKPIs() {
     const openClaims = claims.filter(c => {
         const s = (c.status || '').toLowerCase();
 
-        // Exclude definitively closed statuses
-        if (s === 'settled' || s === 'closed' || s === 'repair completed') return false;
+        // Exclude definitively closed/resolved statuses
+        if (s === 'settled' || s === 'closed' || s === 'repair completed' || s === 'rejected' || s.includes('no issue')) return false;
 
         // For Replacement Approved, it's only "closed" if the workflow is complete
         if (s.includes('replacement') && s.includes('approved')) {
@@ -111,8 +111,11 @@ function updateKPIs() {
     });
     document.getElementById('kpi-settled').textContent = settledClaims.length;
 
-    // Closed as Completed (New KPI)
-    const closedClaims = claims.filter(c => (c.status || '').toLowerCase() === 'closed');
+    // Closed/Resolved as Completed
+    const closedClaims = claims.filter(c => {
+        const s = (c.status || '').toLowerCase();
+        return s === 'closed' || s === 'rejected' || s.includes('no issue');
+    });
     const kpiClosedEl = document.getElementById('kpi-closed');
     if (kpiClosedEl) kpiClosedEl.textContent = closedClaims.length;
 
@@ -125,10 +128,10 @@ function updateKPIs() {
     const kpiRejectedEl = document.getElementById('kpi-rejected');
     if (kpiRejectedEl) kpiRejectedEl.textContent = rejectedClaims.length;
 
-    // No Issue / On Call Resolution
+    // No Issue / Oncall Resolution
     const noIssueClaims = claims.filter(c => {
         const s = (c.status || '').toLowerCase();
-        return s === 'no issue' || s === 'on call resolution' || s === 'no issue/on call resolution' || s === 'no issue / on call resolution';
+        return s.includes('no issue') || s === 'on call resolution' || s === 'oncall resolution';
     });
     const kpiNoIssueEl = document.getElementById('kpi-no-issue');
     if (kpiNoIssueEl) kpiNoIssueEl.textContent = noIssueClaims.length;
@@ -786,7 +789,10 @@ function filterByCard(cardType) {
             });
             break;
         case 'closed':
-            filteredClaims = allClaims.filter(c => (c.status || '').toLowerCase() === 'closed');
+            filteredClaims = allClaims.filter(c => {
+                const s = (c.status || '').toLowerCase();
+                return s === 'closed' || s === 'rejected' || s.includes('no issue');
+            });
             break;
         case 'today':
             filteredClaims = allClaims.filter(c =>
@@ -804,7 +810,7 @@ function filterByCard(cardType) {
         case 'no-issue':
             filteredClaims = allClaims.filter(c => {
                 const s = (c.status || '').toLowerCase();
-                return s === 'no issue' || s === 'on call resolution' || s === 'no issue/on call resolution' || s === 'no issue / on call resolution';
+                return s.includes('no issue') || s === 'on call resolution' || s === 'oncall resolution';
             });
             break;
         default:

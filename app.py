@@ -251,9 +251,8 @@ class ClaimWrapper:
         if self._bool("Complete") or self._bool("Complete (Yes/No)"):
             return True
         
-        # Also consider certain statuses as non-pending
-        status = (self.status or "").strip().lower()
-        if status in ["repair completed", "closed"]:
+        # Also consider certain statuses as non-pending (resolved, rejected, or on-call)
+        if status in ["repair completed", "closed", "rejected", "no issue/oncall resolution", "no issue", "oncall resolution"]:
             return True
         
         # Check if all replacement workflow steps are completed

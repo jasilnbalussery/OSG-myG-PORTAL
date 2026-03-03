@@ -566,6 +566,37 @@ body {
     background: #6b7280;
 }
 
+.status-pill.rejected {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.status-pill.rejected::before {
+    background: #ef4444;
+}
+
+/* No Issue / Oncall Resolution */
+.status-pill.no-issue--oncall-resolution,
+.status-pill.no-issue\/oncall-resolution {
+    background: #f0fdfa;
+    color: #14b8a6;
+}
+
+.status-pill.no-issue--oncall-resolution::before,
+.status-pill.no-issue\/oncall-resolution::before {
+    background: #14b8a6;
+}
+
+/* when slash is replaced with dash in template filter */
+.status-pill.no-issue-oncall-resolution {
+    background: #f0fdfa;
+    color: #14b8a6;
+}
+
+.status-pill.no-issue-oncall-resolution::before {
+    background: #14b8a6;
+}
+
 .id-badge {
     font-family: 'SF Mono', monospace;
     font-size: 0.85rem;
