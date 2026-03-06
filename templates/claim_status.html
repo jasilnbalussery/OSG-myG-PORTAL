@@ -209,7 +209,7 @@
                             ${claim.claim_settled_date ? `
                             <div class="key-date-badge">
                                 <i class="ri-checkbox-circle-line"></i>
-                                Settled: <strong>${claim.claim_settled_date}</strong>
+                                Settled: <strong>${formatDateDDMMYYYY(claim.claim_settled_date)}</strong>
                             </div>` : ''}
                             ${claim.tat ? `
                             <div class="key-date-badge">
@@ -357,6 +357,25 @@
         try {
             const d = new Date(dateStr + 'T00:00:00');
             return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch {
+            return dateStr;
+        }
+    }
+
+    function formatDateDDMMYYYY(dateStr) {
+        if (!dateStr) return '';
+        try {
+            // dateStr is typically "YYYY-MM-DD"
+            const parts = dateStr.split(' ')[0].split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            const d = new Date(dateStr + 'T00:00:00');
+            if (isNaN(d.getTime())) return dateStr;
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}-${month}-${year}`;
         } catch {
             return dateStr;
         }

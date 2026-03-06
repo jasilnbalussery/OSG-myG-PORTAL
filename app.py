@@ -2184,14 +2184,13 @@ def preload_data():
     try:
         result = load_excel_data()
         if result:
-            print(f"[STARTUP] ✅ Customer data pre-loaded successfully. Index size: {len(result)}")
+            print(f"[STARTUP] Customer data pre-loaded successfully. Index size: {len(result)}")
         else:
-            print("[STARTUP] ⚠️ Customer data returned empty (Excel file may be missing)")
+            print("[STARTUP] Customer data returned empty (Excel file may be missing)")
     except Exception as e:
-        print(f"[STARTUP] ❌ Pre-load failed: {e}")
+        print(f"[STARTUP] Pre-load failed: {e}")
         import traceback
         traceback.print_exc()
-
 def cache_keep_warm():
     """Periodic task to keep the customer data cache warm"""
     import time as _time
