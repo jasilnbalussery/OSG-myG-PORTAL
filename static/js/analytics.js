@@ -500,15 +500,12 @@ function updatePendingActions() {
 
     // 2. Pending Replacement
     const pendingReplacement = filteredClaims.filter(c => {
-        // Strict check: Only count if status is 'Replacement Approved' or 'Replacement approved'
         const s = (c.status || '').toLowerCase();
-        const hasReplacementStatus = s.includes('replacement') && s.includes('approved');
-
-        if (!hasReplacementStatus) return false;
-
-        // Use the complete flag from backend which now includes mail_sent_to_store
-        return !c.complete;
-    });
+        // Check if status relates to replacement but is not completed
+        if (!s.includes('replacement')) return false;
+        if (s.includes('completed') || c.complete) return false;
+        return true;
+    }).sort((a, b) => new Date(a.submitted_date) - new Date(b.submitted_date));
 
     document.getElementById('pendingReplacementCount').textContent = pendingReplacement.length;
 
@@ -520,12 +517,17 @@ function updatePendingActions() {
 
         pendingReplacement.forEach(claim => {
             const pendingStage = getPendingReplacementStage(claim);
+            const daysOld = calculateDaysOld(claim.submitted_date);
+            const isOverdue = daysOld > 3;
             html += `
-                <div class="action-item" onclick="openAnalyticsModal('${claim.claim_id}')" style="cursor: pointer;">
+                <div class="action-item ${isOverdue ? 'overdue' : ''}" onclick="openAnalyticsModal('${claim.claim_id}')" style="cursor: pointer;">
                     <div class="action-info">
-                        <strong>${claim.claim_id}</strong> - ${claim.customer_name}
-                        <span class="action-stage">Pending: ${pendingStage}</span>
+                        <strong>${claim.claim_id}</strong> - ${claim.customer_name} ${daysOld} days old
+                        <div class="action-stage" style="margin-top: 2px; font-size: 0.85em; color: var(--text-secondary);">
+                            <i class="ri-git-commit-line" style="vertical-align: middle;"></i> Pending: <b>${pendingStage}</b>
+                        </div>
                     </div>
+                    ${isOverdue ? '<i class="ri-error-warning-line overdue-icon"></i>' : ''}
                 </div>
             `;
         });

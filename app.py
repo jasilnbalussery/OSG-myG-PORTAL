@@ -25,7 +25,7 @@ from perf_utils import timed_excel_read
 # CONFIG
 # ----------------------
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-EXCEL_FILE = os.path.join(BASE_DIR, "Onsitego OSID updated upto Dec 2025.xlsx")
+EXCEL_FILE = os.path.join(BASE_DIR, "Onsitego OSID updated upto Jan 2026.xlsx")
 CACHE_FILE = os.path.join(BASE_DIR, "cache.pkl")
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 DB_FILE = os.path.join(BASE_DIR, "claims.db")
