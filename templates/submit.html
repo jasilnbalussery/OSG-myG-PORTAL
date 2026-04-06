@@ -1,0 +1,173 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="submit-container" style="max-width: 900px; margin: 0 auto;">
+
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-title">
+            <h1>New Claim</h1>
+            <p>Register a warranty claim for a customer</p>
+        </div>
+    </div>
+
+    <div class="glass-panel" style="padding: 3rem;">
+
+        <!-- Step 1: Search -->
+        <div class="verification-section">
+            <h3
+                style="margin-bottom: 2rem; color: var(--text-main); font-weight: 700; font-size: 1.5rem; letter-spacing: -0.025em;">
+                Find Customer</h3>
+
+            <div class="search-card"
+                style="background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05); border: 1px solid rgba(229, 231, 235, 0.5);">
+                <label
+                    style="display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Customer
+                    Search</label>
+
+                <div class="input-group" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div class="search-box-premium" style="flex: 1; position: relative;">
+                        <i class="ri-smartphone-line"
+                            style="position: absolute; left: 1.25rem; top: 50%; transform: translateY(-50%); font-size: 1.4rem; color: var(--primary);"></i>
+                        <input type="text" id="mobileInput" placeholder="Enter 10-digit Mobile Number" maxlength="10"
+                            style="width: 100%; padding: 1.25rem 1.25rem 1.25rem 3.5rem; font-size: 1.1rem; border: 2px solid #f3f4f6; border-radius: 12px; transition: all 0.3s ease; background: #f9fafb; font-weight: 500; letter-spacing: 0.5px;">
+                    </div>
+
+                    <button class="btn-primary-gradient" onclick="searchCustomer()" id="searchBtn"
+                        style="padding: 0 2.5rem; border-radius: 12px; font-weight: 600; font-size: 1.1rem; border: none; cursor: pointer; color: white; background: var(--primary-gradient); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem; min-height: 3.5rem;">
+                        <i class="ri-search-2-line" style="font-size: 1.25rem;"></i> Search
+                    </button>
+                </div>
+
+                <p
+                    style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-tertiary); display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ri-information-line"></i> Verify customer details before registering a claim.
+                </p>
+
+                <div id="search-msg" class="msg-box hidden"
+                    style="margin-top: 1rem; padding: 1rem; border-radius: 8px; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; animation: slideDown 0.3s ease;">
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .search-box-premium input:focus {
+                border-color: var(--primary);
+                background: white;
+                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+                outline: none;
+            }
+
+            .btn-primary-gradient:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+            }
+
+            .btn-primary-gradient:active {
+                transform: translateY(0);
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        </style>
+
+        <!-- Step 2: Customer & Product (Hidden initially) -->
+        <div id="claim-form-section" class="hidden fade-in"
+            style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border-light);">
+
+            <!-- Customer Card -->
+            <div class="user-profile"
+                style="background: #f8fafc; border: 1px solid var(--border-light); padding: 1.5rem; margin-bottom: 2rem; width: 100%;">
+                <div class="user-avatar" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                    <i class="ri-user-smile-line"></i>
+                </div>
+                <div class="user-info" style="display: block;">
+                    <div class="name" id="disp-name" style="font-size: 1.1rem; margin-bottom: 0.25rem;">Customer Name
+                    </div>
+                    <div class="role" id="disp-mobile" style="font-size: 0.9rem; color: var(--text-tertiary);">Mobile
+                    </div>
+                </div>
+                <div style="margin-left: auto;">
+                    <span class="status-pill registered">Verified</span>
+                </div>
+            </div>
+
+            <!-- Product Selection -->
+            <h3 style="margin-bottom: 1.5rem; color: var(--text-secondary); font-weight: 600;">Select Product</h3>
+            <div id="product-list" class="product-grid"
+                style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- Claim Details Form -->
+            <h3 style="margin-bottom: 1.5rem; color: var(--text-secondary); font-weight: 600;">Claim Details</h3>
+            <form id="submissionForm">
+                <input type="hidden" name="customer_name" id="hidden_name">
+                <input type="hidden" name="mobile" id="hidden_mobile">
+                <input type="hidden" name="selected_product" id="selected_product_json">
+
+                <!-- Global Service Address -->
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label
+                        style="color: var(--text-tertiary); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Service
+                        Address</label>
+                    <textarea name="address" id="input_address" rows="3" placeholder="Enter complete address..."
+                        required
+                        style="width: 100%; padding: 1rem; border-radius: 12px; border: 1px solid #e5e7eb; background: #f9fafb; outline: none; transition: all 0.2s;"></textarea>
+                </div>
+
+                <!-- Dynamic Claim Details Container -->
+                <div id="dynamic-claim-forms">
+                    <!-- Dynamic product sections will be inserted here by JS -->
+                    <div class="empty-selection-msg"
+                        style="text-align: center; color: var(--text-tertiary); padding: 2rem; border: 2px dashed #e5e7eb; border-radius: 12px;">
+                        <i class="ri-shopping-cart-line"
+                            style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+                        Please select products above to add claim details
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary"
+                    style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <i class="ri-send-plane-fill"></i> Submit Claim
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="loader" class="modal-overlay hidden"
+    style="display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
+    <div class="spinner"
+        style="border: 4px solid rgba(255,255,255,0.1); border-left-color: var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;">
+    </div>
+    <p style="margin-top: 1rem; font-weight: 500;">Processing Claim...</p>
+</div>
+
+<style>
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    textarea:focus {
+        border-color: var(--primary) !important;
+        background: white !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}

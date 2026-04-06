@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSG myG PORTAL | Warranty Management</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=minimal">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}?v=minimal">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/workflow_enhanced.css') }}?v=minimal">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/claim_status.css') }}?v=minimal">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="background-globes">
+        <div class="globe globe-1"></div>
+        <div class="globe globe-2"></div>
+        <div class="globe globe-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-area" style="flex-direction: column; align-items: flex-start; gap: 0.3rem;">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="OSG myG Logo"
+                    style="max-height: 72px; max-width: 100%; object-fit: contain; display: block;">
+                <span
+                    style="font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 600; color: #6366f1; letter-spacing: 0.4px; padding-left: 2px;">OSG
+                    myG Warranty</span>
+            </div>
+
+            <nav class="nav-menu">
+                {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('dashboard') }}"
+                    class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="ri-dashboard-line"></i> Dashboard
+                </a>
+                <a href="{{ url_for('analytics_dashboard') }}"
+                    class="nav-item {% if request.endpoint == 'analytics_dashboard' %}active{% endif %}">
+                    <i class="ri-bar-chart-box-line"></i> Analytics
+                </a>
+                <a href="{{ url_for('reports_tools') }}"
+                    class="nav-item {% if request.endpoint == 'reports_tools' %}active{% endif %}">
+                    <i class="ri-file-chart-line"></i> Reports
+                </a>
+                <a href="{{ url_for('submit_claim') }}"
+                    class="nav-item {% if request.endpoint == 'submit_claim' %}active{% endif %}">
+                    <i class="ri-add-circle-line"></i> New Claim
+                </a>
+                {% endif %}
+                <a href="{{ url_for('claim_status') }}"
+                    class="nav-item {% if request.endpoint == 'claim_status' %}active{% endif %}">
+                    <i class="ri-search-eye-line"></i> Claim Status
+                </a>
+            </nav>
+
+            <div style="margin-top: auto; padding: 0 12px 10px;">
+                <div
+                    style="background: linear-gradient(135deg, #eef2ff, #e0e7ff); border-radius: 12px; padding: 14px 16px; border: 1px solid rgba(99,102,241,0.15);">
+                    <div
+                        style="font-size: 13px; font-weight: 600; color: #4338ca; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                        <i class="ri-customer-service-2-line" style="font-size: 16px;"></i> For Queries Contact
+                    </div>
+                    <div style="font-size: 15px; font-weight: 700; color: #1e1b4b; margin-bottom: 8px;">Sarath</div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <i class="ri-mail-line" style="font-size: 15px; color: #6366f1;"></i>
+                        <a href="mailto:sarath.k@myg.in"
+                            style="color: #4338ca; text-decoration: none; font-size: 13px; font-weight: 500;">sarath.k@myg.in</a>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="ri-phone-line" style="font-size: 15px; color: #6366f1;"></i>
+                        <a href="tel:+919037202200"
+                            style="color: #4338ca; text-decoration: none; font-size: 13px; font-weight: 500;">+91
+                            9037202200</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="user-profile">
+                <div class="user-avatar">{{ session.get('display_name', session.get('username', 'U'))[:2]|upper }}</div>
+                <div class="user-info">
+                    <span class="name">{{ session.get('display_name', session.get('username', 'User')) }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn" title="Logout">
+                    <i class="ri-logout-box-r-line"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Modals or Overlays -->
+    <div id="modal-container" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <button class="close-modal" onclick="closeModal()"><i class="ri-close-line"></i></button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}?v=3"></script>
+</body>
+
+</html>
