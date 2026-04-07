@@ -1312,7 +1312,85 @@ def analytics_dashboard():
 @app.route('/claim-status')
 @login_required
 def claim_status():
-    return render_template('claim_status.html')
+    claims = fetch_claims_from_sheet()
+    now = get_ist_now().replace(tzinfo=None)
+
+    # KPI stats
+    total = len(claims)
+    pending = len([c for c in claims if not c.complete])
+    completed = len([c for c in claims if c.complete])
+    tat_values = [c.tat for c in claims if c.tat is not None and isinstance(c.tat, int)]
+    avg_tat = round(sum(tat_values) / len(tat_values)) if tat_values else 0
+
+    report_stats = {
+        'pending': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'completed': 0,
+        'rejected': 0,
+        'replacement_mail': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'gst_invoice': 0,
+        'pending_settlement_osg': 0,
+        'settlement_mail_accounts': 0,
+        'settled_accounts': 0,
+        'grand_total_status': 0,
+        'grand_total_replacement': 0,
+        'report_date': now.strftime('%d-%m-%Y')
+    }
+
+    for c in claims:
+        age = (now - c.created_at.replace(tzinfo=None)).days if c.created_at else 0
+        settled_date_raw = c.claim_settled_date
+        repl_age = age
+        if settled_date_raw and str(settled_date_raw).strip() not in ('', 'nan', 'None'):
+            try:
+                settled_dt = datetime.datetime.strptime(str(settled_date_raw).strip()[:10], '%Y-%m-%d')
+                repl_age = (now - settled_dt).days
+            except Exception:
+                try:
+                    settled_dt = datetime.datetime.strptime(str(settled_date_raw).strip()[:10], '%d-%m-%Y')
+                    repl_age = (now - settled_dt).days
+                except Exception:
+                    repl_age = age
+
+        status = (c.status or "").strip().lower()
+
+        if status == "rejected":
+            report_stats['rejected'] += 1
+            report_stats['grand_total_status'] += 1
+        elif c.complete or status in ["repair completed", "closed", "no issue/oncall resolution", "no issue", "oncall resolution"]:
+            report_stats['completed'] += 1
+            report_stats['grand_total_status'] += 1
+        else:
+            report_stats['pending']['total'] += 1
+            report_stats['grand_total_status'] += 1
+            if age <= 5:
+                report_stats['pending']['lt5'] += 1
+            elif age <= 10:
+                report_stats['pending']['gt5'] += 1
+            else:
+                report_stats['pending']['gt10'] += 1
+
+        if "replacement" in status or c.mail_sent_to_store:
+            if c.settled_with_accounts:
+                report_stats['settled_accounts'] += 1
+                report_stats['grand_total_replacement'] += 1
+            elif c.invoice_sent_osg:
+                report_stats['pending_settlement_osg'] += 1
+                report_stats['grand_total_replacement'] += 1
+            elif c.invoice_generated:
+                report_stats['gst_invoice'] += 1
+                report_stats['grand_total_replacement'] += 1
+            else:
+                report_stats['replacement_mail']['total'] += 1
+                report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5:
+                    report_stats['replacement_mail']['lt5'] += 1
+                elif repl_age <= 10:
+                    report_stats['replacement_mail']['gt5'] += 1
+                else:
+                    report_stats['replacement_mail']['gt10'] += 1
+
+    return render_template('claim_status.html', report_stats=report_stats,
+                           total=total, pending=pending, completed=completed, avg_tat=avg_tat)
 
 @app.route('/api/claim-status-lookup', methods=['POST'])
 @login_required
