@@ -78,6 +78,87 @@
     </div>
 </div>
 
+<!-- OSG Customer Complaint Report Table -->
+<div class="glass-panel table-container" style="margin-bottom: 2.5rem; overflow-x: auto; padding: 1rem;">
+    <!-- Report Header with Download Button -->
+    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 0.75rem;">
+        <a href="{{ url_for('download_report') }}" id="btn-download-excel"
+            style="display: inline-flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #217346, #1e6b40); color: white; padding: 0.55rem 1.2rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600; text-decoration: none; box-shadow: 0 4px 10px rgba(33,115,70,0.25); transition: all 0.25s ease; border: none; cursor: pointer;"
+            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(33,115,70,0.35)'"
+            onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 10px rgba(33,115,70,0.25)'">
+            <i class="ri-file-excel-2-line" style="font-size: 1.1rem;"></i>
+            Download Excel
+        </a>
+    </div>
+    <table class="osg-report-table">
+        <thead>
+            <tr>
+                <th colspan="10" class="bg-yellow">OSG CUSTOMER COMPLAINT REPORT {{ report_stats.report_date }}</th>
+            </tr>
+            <tr>
+                <th class="bg-lightblue" rowspan="2">STATUS</th>
+                <th class="bg-lightblue" colspan="4">COUNT</th>
+                <th class="bg-lightblue" rowspan="2">REPLACEMENT</th>
+                <th class="bg-lightblue" colspan="4">COUNT</th>
+            </tr>
+            <tr>
+                <th class="bg-green">&lt;5</th>
+                <th class="bg-darkorange">&gt;5</th>
+                <th class="bg-red">&gt;10</th>
+                <th class="bg-lightblue">TOTAL</th>
+                <th class="bg-green">&lt;5</th>
+                <th class="bg-darkorange">&gt;5</th>
+                <th class="bg-red">&gt;10</th>
+                <th class="bg-lightblue">TOTAL</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="row-title">PENDING</td>
+                <td>{{ report_stats.pending.lt5 }}</td>
+                <td>{{ report_stats.pending.gt5 }}</td>
+                <td>{{ report_stats.pending.gt10 }}</td>
+                <td><strong>{{ report_stats.pending.total }}</strong></td>
+                
+                <td>REPLACEMENT MAIL SENT TO STORE</td>
+                <td>{{ report_stats.replacement_mail.lt5 }}</td>
+                <td>{{ report_stats.replacement_mail.gt5 }}</td>
+                <td>{{ report_stats.replacement_mail.gt10 }}</td>
+                <td><strong>{{ report_stats.replacement_mail.total }}</strong></td>
+            </tr>
+            <tr>
+                <td class="row-title">COMPLETED</td>
+                <td colspan="4">{{ report_stats.completed }}</td>
+                
+                <td>GST INVOICE BILLED</td>
+                <td colspan="4">{{ report_stats.gst_invoice }}</td>
+            </tr>
+            <tr>
+                <td rowspan="3" class="row-title">REJECTED</td>
+                <td rowspan="3" colspan="4">{{ report_stats.rejected }}</td>
+                
+                <td class="bg-peach">PENDING SETTLEMENT FROM OSG</td>
+                <td colspan="4">{{ report_stats.pending_settlement_osg }}</td>
+            </tr>
+            <tr>
+                <td>SETTLEMENT MAIL SENT TO myG ACCOUNTS</td>
+                <td colspan="4">{{ report_stats.settlement_mail_accounts }}</td>
+            </tr>
+            <tr>
+                <td>SETTLED WITH ACCOUNTS</td>
+                <td colspan="4">{{ report_stats.settled_accounts }}</td>
+            </tr>
+            <tr>
+                <td class="bg-lightblue row-title">GRAND TOTAL</td>
+                <td colspan="4" class="bg-lightblue">{{ report_stats.grand_total_status }}</td>
+                
+                <td class="bg-lightblue row-title">GRAND TOTAL</td>
+                <td colspan="4" class="bg-lightblue">{{ report_stats.grand_total_replacement }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
 <!-- Claims Table -->
 <div class="glass-panel table-container">
     <div class="table-header">

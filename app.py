@@ -401,11 +401,267 @@ def dashboard():
     tat_values = [c.tat for c in claims if c.tat is not None and isinstance(c.tat, int)]
     avg_tat = round(sum(tat_values) / len(tat_values)) if tat_values else 0
 
-    return render_template('dashboard.html', claims=claims, total=total, pending=pending, completed=completed, avg_tat=avg_tat)
+    # Calculate Data for OSG Customer Complaint Report
+    now = get_ist_now().replace(tzinfo=None)
+    report_stats = {
+        'pending': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'completed': 0,
+        'rejected': 0,
+        'replacement_mail': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'gst_invoice': 0,
+        'pending_settlement_osg': 0,
+        'settlement_mail_accounts': 0,
+        'settled_accounts': 0,
+        'grand_total_status': 0,
+        'grand_total_replacement': 0,
+        'report_date': now.strftime('%d-%m-%Y')
+    }
+
+    for c in claims:
+        # Age for STATUS section: today − submitted date
+        age = (now - c.created_at.replace(tzinfo=None)).days if c.created_at else 0
+
+        # Age for REPLACEMENT section: today − claim_settled_date (if available), else today − submitted date
+        settled_date_raw = c.claim_settled_date
+        repl_age = age  # default fallback
+        if settled_date_raw and str(settled_date_raw).strip() not in ('', 'nan', 'None'):
+            try:
+                settled_dt = datetime.datetime.strptime(str(settled_date_raw).strip()[:10], '%Y-%m-%d')
+                repl_age = (now - settled_dt).days
+            except Exception:
+                try:
+                    settled_dt = datetime.datetime.strptime(str(settled_date_raw).strip()[:10], '%d-%m-%Y')
+                    repl_age = (now - settled_dt).days
+                except Exception:
+                    repl_age = age  # keep submitted-date age if parsing fails
+
+        status = (c.status or "").strip().lower()
+        
+        # STATUS column logic (uses submitted-date age)
+        if status == "rejected":
+            report_stats['rejected'] += 1
+            report_stats['grand_total_status'] += 1
+        elif c.complete or status in ["repair completed", "closed", "no issue/oncall resolution", "no issue", "oncall resolution"]:
+            report_stats['completed'] += 1
+            report_stats['grand_total_status'] += 1
+        else:
+            report_stats['pending']['total'] += 1
+            report_stats['grand_total_status'] += 1
+            if age <= 5:
+                report_stats['pending']['lt5'] += 1
+            elif age <= 10:
+                report_stats['pending']['gt5'] += 1
+            else:
+                report_stats['pending']['gt10'] += 1
+                
+        # REPLACEMENT column logic — waterfall: place claim at its CURRENT highest completed step
+        # Aging buckets use claim_settled_date-based age (repl_age)
+        if "replacement" in status or c.mail_sent_to_store:
+            if c.settled_with_accounts:
+                report_stats['settled_accounts'] += 1
+                report_stats['grand_total_replacement'] += 1
+            elif c.invoice_sent_osg:
+                report_stats['pending_settlement_osg'] += 1
+                report_stats['grand_total_replacement'] += 1
+            elif c.invoice_generated:
+                report_stats['gst_invoice'] += 1
+                report_stats['grand_total_replacement'] += 1
+            else:
+                # mail_sent_to_store step OR replacement approved with no checkboxes yet
+                report_stats['replacement_mail']['total'] += 1
+                report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5:
+                    report_stats['replacement_mail']['lt5'] += 1
+                elif repl_age <= 10:
+                    report_stats['replacement_mail']['gt5'] += 1
+                else:
+                    report_stats['replacement_mail']['gt10'] += 1
+
+    return render_template('dashboard.html', claims=claims, total=total, pending=pending, completed=completed, avg_tat=avg_tat, report_stats=report_stats)
 
 @app.route('/health')
 def health_check():
     return jsonify({"status": "healthy", "timestamp": datetime.datetime.now().isoformat()}), 200
+
+
+@app.route('/download-report')
+@admin_required
+def download_report():
+    """Generate and download the OSG Customer Complaint Report as a styled Excel file."""
+    import xlsxwriter
+
+    # ── Rebuild the same report_stats as in the dashboard route ──
+    claims = fetch_claims_from_sheet()
+    now = get_ist_now().replace(tzinfo=None)
+
+    report_stats = {
+        'pending': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'completed': 0,
+        'rejected': 0,
+        'replacement_mail': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'gst_invoice': 0,
+        'pending_settlement_osg': 0,
+        'settlement_mail_accounts': 0,
+        'settled_accounts': 0,
+        'grand_total_status': 0,
+        'grand_total_replacement': 0,
+        'report_date': now.strftime('%d-%m-%Y')
+    }
+
+    for c in claims:
+        age = (now - c.created_at.replace(tzinfo=None)).days if c.created_at else 0
+        settled_date_raw = c.claim_settled_date
+        repl_age = age
+        if settled_date_raw and str(settled_date_raw).strip() not in ('', 'nan', 'None'):
+            try:
+                settled_dt = datetime.datetime.strptime(str(settled_date_raw).strip()[:10], '%Y-%m-%d')
+                repl_age = (now - settled_dt).days
+            except Exception:
+                try:
+                    settled_dt = datetime.datetime.strptime(str(settled_date_raw).strip()[:10], '%d-%m-%Y')
+                    repl_age = (now - settled_dt).days
+                except Exception:
+                    repl_age = age
+
+        status = (c.status or "").strip().lower()
+
+        if status == "rejected":
+            report_stats['rejected'] += 1
+            report_stats['grand_total_status'] += 1
+        elif c.complete or status in ["repair completed", "closed", "no issue/oncall resolution", "no issue", "oncall resolution"]:
+            report_stats['completed'] += 1
+            report_stats['grand_total_status'] += 1
+        else:
+            report_stats['pending']['total'] += 1
+            report_stats['grand_total_status'] += 1
+            if age <= 5:
+                report_stats['pending']['lt5'] += 1
+            elif age <= 10:
+                report_stats['pending']['gt5'] += 1
+            else:
+                report_stats['pending']['gt10'] += 1
+
+        if "replacement" in status or c.mail_sent_to_store:
+            if c.settled_with_accounts:
+                report_stats['settled_accounts'] += 1
+                report_stats['grand_total_replacement'] += 1
+            elif c.invoice_sent_osg:
+                report_stats['pending_settlement_osg'] += 1
+                report_stats['grand_total_replacement'] += 1
+            elif c.invoice_generated:
+                report_stats['gst_invoice'] += 1
+                report_stats['grand_total_replacement'] += 1
+            else:
+                report_stats['replacement_mail']['total'] += 1
+                report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5:
+                    report_stats['replacement_mail']['lt5'] += 1
+                elif repl_age <= 10:
+                    report_stats['replacement_mail']['gt5'] += 1
+                else:
+                    report_stats['replacement_mail']['gt10'] += 1
+
+    # ── Build Excel in memory ──
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+    ws = workbook.add_worksheet('OSG Complaint Report')
+
+    # ── Define formats matching the HTML table colours ──
+    def fmt(props):
+        defaults = {
+            'border': 1, 'border_color': '#000000',
+            'align': 'center', 'valign': 'vcenter',
+            'font_name': 'Arial', 'font_size': 11,
+        }
+        defaults.update(props)
+        return workbook.add_format(defaults)
+
+    fmt_title   = fmt({'bold': True, 'font_size': 13, 'bg_color': '#FFFF00'})                     # yellow header
+    fmt_blue    = fmt({'bold': True, 'bg_color': '#9BC2E6'})                                       # light-blue header cells
+    fmt_green   = fmt({'bold': True, 'bg_color': '#C6E0B4'})                                       # green <5
+    fmt_orange  = fmt({'bold': True, 'bg_color': '#FFC000'})                                       # dark-orange >5
+    fmt_red     = fmt({'bold': True, 'bg_color': '#FF0000', 'font_color': '#FFFFFF'})              # red >10
+    fmt_peach   = fmt({'bg_color': '#F8CBAD'})                                                     # peach pending settlement
+    fmt_normal  = fmt({})                                                                           # plain cell
+    fmt_bold    = fmt({'bold': True})                                                               # bold plain
+    fmt_blue_bg = fmt({'bold': True, 'bg_color': '#9BC2E6'})                                       # grand total rows
+
+    # ── Column widths ──
+    ws.set_column(0, 0, 22)   # STATUS
+    ws.set_column(1, 3, 8)    # <5 >5 >10
+    ws.set_column(4, 4, 10)   # TOTAL
+    ws.set_column(5, 5, 36)   # REPLACEMENT label
+    ws.set_column(6, 8, 8)    # <5 >5 >10
+    ws.set_column(9, 9, 10)   # TOTAL
+    ws.set_row(0, 22)          # title row height
+    for r in range(1, 10):
+        ws.set_row(r, 18)
+
+    # ── Row 0: Title (A1:J1) ──
+    ws.merge_range('A1:J1', f'OSG CUSTOMER COMPLAINT REPORT {report_stats["report_date"]}', fmt_title)
+
+    # ── Row 1: Column group headers ──
+    ws.merge_range('A2:A3', 'STATUS',      fmt_blue)
+    ws.merge_range('B2:E2', 'COUNT',       fmt_blue)
+    ws.merge_range('F2:F3', 'REPLACEMENT', fmt_blue)
+    ws.merge_range('G2:J2', 'COUNT',       fmt_blue)
+
+    # ── Row 2: Sub-headers <5 >5 >10 TOTAL ──
+    ws.write('B3', '<5',    fmt_green)
+    ws.write('C3', '>5',    fmt_orange)
+    ws.write('D3', '>10',   fmt_red)
+    ws.write('E3', 'TOTAL', fmt_blue)
+    ws.write('G3', '<5',    fmt_green)
+    ws.write('H3', '>5',    fmt_orange)
+    ws.write('I3', '>10',   fmt_red)
+    ws.write('J3', 'TOTAL', fmt_blue)
+
+    # ── Data rows (rows 3-6, i.e. Excel rows 4-7) ──
+    # PENDING row
+    ws.write('A4', 'PENDING',                                     fmt_bold)
+    ws.write('B4', report_stats['pending']['lt5'],                 fmt_normal)
+    ws.write('C4', report_stats['pending']['gt5'],                 fmt_normal)
+    ws.write('D4', report_stats['pending']['gt10'],                fmt_normal)
+    ws.write('E4', report_stats['pending']['total'],               fmt_bold)
+    ws.write('F4', 'REPLACEMENT MAIL SENT TO STORE',              fmt_normal)
+    ws.write('G4', report_stats['replacement_mail']['lt5'],        fmt_normal)
+    ws.write('H4', report_stats['replacement_mail']['gt5'],        fmt_normal)
+    ws.write('I4', report_stats['replacement_mail']['gt10'],       fmt_normal)
+    ws.write('J4', report_stats['replacement_mail']['total'],      fmt_bold)
+
+    # COMPLETED row
+    ws.write('A5', 'COMPLETED',                                    fmt_bold)
+    ws.merge_range('B5:E5', report_stats['completed'],             fmt_normal)
+    ws.write('F5', 'GST INVOICE BILLED',                          fmt_normal)
+    ws.merge_range('G5:J5', report_stats['gst_invoice'],           fmt_normal)
+
+    # REJECTED rows (merged A:E across 3 rows)
+    ws.merge_range('A6:A8', 'REJECTED',                           fmt_bold)
+    ws.merge_range('B6:E8', report_stats['rejected'],             fmt_normal)
+    ws.write('F6', 'PENDING SETTLEMENT FROM OSG',                 fmt_peach)
+    ws.merge_range('G6:J6', report_stats['pending_settlement_osg'], fmt_normal)
+    ws.write('F7', 'SETTLEMENT MAIL SENT TO myG ACCOUNTS',        fmt_normal)
+    ws.merge_range('G7:J7', report_stats['settlement_mail_accounts'], fmt_normal)
+    ws.write('F8', 'SETTLED WITH ACCOUNTS',                       fmt_normal)
+    ws.merge_range('G8:J8', report_stats['settled_accounts'],     fmt_normal)
+
+    # GRAND TOTAL row
+    ws.write('A9', 'GRAND TOTAL',                                 fmt_blue_bg)
+    ws.merge_range('B9:E9', report_stats['grand_total_status'],   fmt_blue_bg)
+    ws.write('F9', 'GRAND TOTAL',                                 fmt_blue_bg)
+    ws.merge_range('G9:J9', report_stats['grand_total_replacement'], fmt_blue_bg)
+
+    workbook.close()
+    output.seek(0)
+
+    filename = f"OSG_Complaint_Report_{report_stats['report_date']}.xlsx"
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
+
 
 
 # Global Cache for Customer Lookup

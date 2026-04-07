@@ -1125,3 +1125,52 @@ body {
 .btn-secondary:active {
     transform: translateY(0);
 }
+
+/* 📋 OSG Exact Report Table */
+.osg-report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+    font-size: 0.95rem;
+    background: white;
+    margin-bottom: 2rem;
+}
+
+.osg-report-table th, .osg-report-table td {
+    border: 1px solid #000;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.6rem;
+    color: #000;
+}
+
+.osg-report-table .bg-yellow {
+    background-color: #ffff00;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.osg-report-table .bg-lightblue {
+    background-color: #9bc2e6;
+    font-weight: bold;
+}
+
+.osg-report-table .bg-peach {
+    background-color: #f8cbad;
+}
+
+.osg-report-table .bg-green {
+    background-color: #c6e0b4;
+}
+
+.osg-report-table .bg-darkorange {
+    background-color: #ffc000;
+}
+
+.osg-report-table .bg-red {
+    background-color: #ff0000;
+}
+
+.osg-report-table .row-title {
+    text-align: center;
+}
