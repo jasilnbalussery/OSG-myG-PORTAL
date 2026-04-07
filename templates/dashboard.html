@@ -579,43 +579,6 @@
                 </div>
             </div>
 
-            <div class="divider" style="height: 1px; background: #e5e7eb; margin: 1rem 0 2rem 0;"></div>
-
-            <!-- Follow Up Section -->
-            <div class="follow-up-section" style="margin-bottom: 2rem;">
-                <div class="field-group" id="wf-section-followup">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <label style="margin-bottom: 0;">Follow Up History</label>
-                        <button type="button" class="btn-refresh" onclick="toggleFollowUpHistory()"
-                            style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
-                            <i class="ri-history-line"></i> View History
-                        </button>
-                    </div>
-                    <textarea id="followUpHistory" rows="5" readonly class="read-only-field hidden"
-                        style="margin-bottom: 1rem;"></textarea>
-
-                    <label>Add New Note</label>
-                    <textarea id="newFollowUpNote" rows="2" placeholder="Enter interaction details..."></textarea>
-
-                    <div style="margin-top: 0.5rem; display: flex; gap: 1rem;">
-                        <div style="flex: 1;">
-                            <label style="font-size: 0.75rem;">Next Follow Up Date</label>
-                            <input type="date" id="followUpDate">
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <div class="divider" style="height: 1px; background: #e5e7eb; margin: 1rem 0 2rem 0;"></div>
-
-
-
-            <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveClaimChanges()">Save Changes</button>
-            </div>
         </div>
 
         <div id="tab-workflow" class="tab-content">
@@ -752,10 +715,38 @@
 
             </div>
 
-            <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-                <button class="btn-primary" onclick="saveClaimChanges()">Save Changes</button>
+        </div>
+
+        <div class="divider" style="height: 1px; background: #e5e7eb; margin: 1rem 0 1.5rem 0; width: 100%;"></div>
+
+        <!-- Follow Up Section ALWAYS VISIBLE -->
+        <div class="follow-up-section" style="margin-bottom: 1.5rem;">
+            <div class="field-group" id="wf-section-followup">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label style="margin-bottom: 0;">Follow Up History</label>
+                    <button type="button" class="btn-refresh" onclick="toggleFollowUpHistory()"
+                        style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
+                        <i class="ri-history-line"></i> View History
+                    </button>
+                </div>
+                <textarea id="followUpHistory" rows="5" readonly class="read-only-field hidden"
+                    style="margin-bottom: 1rem;"></textarea>
+
+                <label>Add New Note</label>
+                <textarea id="newFollowUpNote" rows="2" placeholder="Enter interaction details..."></textarea>
+
+                <div style="margin-top: 0.5rem; display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.75rem;">Next Follow Up Date</label>
+                        <input type="date" id="followUpDate">
+                    </div>
+                </div>
             </div>
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
+            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+            <button class="btn-primary" onclick="saveClaimChanges()">Save Changes</button>
         </div>
 
     </div>

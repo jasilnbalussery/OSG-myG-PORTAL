@@ -575,7 +575,7 @@ function checkStatusUI() {
     // Default: Reset standard sections
     if (tabsContainer) tabsContainer.classList.remove('hidden'); // Default show tabs
     if (divSrNo) divSrNo.classList.add('hidden');
-    if (followUpSection) followUpSection.classList.add('hidden');
+    if (followUpSection) followUpSection.classList.remove('hidden');
     if (wfRepair) wfRepair.classList.add('hidden');
     if (wfReplacement) wfReplacement.classList.add('hidden');
 
@@ -605,8 +605,6 @@ function checkStatusUI() {
         if (tabsContainer) tabsContainer.classList.add('hidden');
         switchTab('info');
         showAllInfo();
-
-        if (followUpSection) followUpSection.classList.remove('hidden');
 
         const fDate = document.getElementById('followUpDate');
         if (fDate) {
