@@ -760,15 +760,12 @@
         const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
         const ist = new Date(utc + (3600000 * 5.5));
 
-        const year = ist.getFullYear();
-        const month = ist.getMonth();
-        const firstDay = new Date(year, month, 1);
         const today = ist;
 
         const fromInput = document.getElementById('dateFrom');
         const toInput = document.getElementById('dateTo');
 
-        fromInput.value = formatDateISO(firstDay);
+        fromInput.value = "2026-02-25";
         toInput.value = formatDateISO(today);
 
         // Apply current month filter on load
