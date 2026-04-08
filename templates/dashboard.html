@@ -131,18 +131,27 @@
                 <td colspan="4">{{ report_stats.completed }}</td>
                 
                 <td>GST INVOICE BILLED</td>
-                <td colspan="4">{{ report_stats.gst_invoice }}</td>
+                <td>{{ report_stats.gst_invoice.lt5 }}</td>
+                <td>{{ report_stats.gst_invoice.gt5 }}</td>
+                <td>{{ report_stats.gst_invoice.gt10 }}</td>
+                <td><strong>{{ report_stats.gst_invoice.total }}</strong></td>
             </tr>
             <tr>
                 <td rowspan="3" class="row-title">REJECTED</td>
                 <td rowspan="3" colspan="4">{{ report_stats.rejected }}</td>
                 
                 <td class="bg-peach">PENDING SETTLEMENT FROM OSG</td>
-                <td colspan="4">{{ report_stats.pending_settlement_osg }}</td>
+                <td>{{ report_stats.pending_settlement_osg.lt5 }}</td>
+                <td>{{ report_stats.pending_settlement_osg.gt5 }}</td>
+                <td>{{ report_stats.pending_settlement_osg.gt10 }}</td>
+                <td><strong>{{ report_stats.pending_settlement_osg.total }}</strong></td>
             </tr>
             <tr>
                 <td>SETTLEMENT MAIL SENT TO myG ACCOUNTS</td>
-                <td colspan="4">{{ report_stats.settlement_mail_accounts }}</td>
+                <td>{{ report_stats.settlement_mail_accounts.lt5 }}</td>
+                <td>{{ report_stats.settlement_mail_accounts.gt5 }}</td>
+                <td>{{ report_stats.settlement_mail_accounts.gt10 }}</td>
+                <td><strong>{{ report_stats.settlement_mail_accounts.total }}</strong></td>
             </tr>
             <tr>
                 <td>SETTLED WITH ACCOUNTS</td>
@@ -358,7 +367,7 @@
                         Replacement Workflow
                     </div>
                     <div class="workflow-progress">
-                        <span class="progress-text" id="workflow-progress-text">0 of 6 completed</span>
+                        <span class="progress-text" id="workflow-progress-text">0 of 7 completed</span>
                         <div class="progress-bar-container">
                             <div class="progress-bar-fill" id="workflow-progress-bar" style="width: 0%"></div>
                         </div>
@@ -437,10 +446,24 @@
                         </div>
                     </div>
 
-                    <!-- Step 6: Settled with Accounts -->
+                    <!-- Step 6: Settlement Mail to Accounts -->
                     <div class="workflow-step" data-step-number="6"
-                        onclick="toggleWorkflowStep(this, 'chk_repl_settled_accounts')">
+                        onclick="toggleWorkflowStep(this, 'chk_repl_settlement_mail')">
                         <div class="step-icon" data-step="6"></div>
+                        <div class="step-content">
+                            <div class="step-info">
+                                <div class="step-label">Settlement Mail to Accounts</div>
+                                <div class="step-description">Settlement mail sent to myG accounts</div>
+                            </div>
+                            <input type="checkbox" id="chk_repl_settlement_mail" class="step-checkbox"
+                                onclick="event.stopPropagation(); updateWorkflowProgress()">
+                        </div>
+                    </div>
+
+                    <!-- Step 7: Settled with Accounts -->
+                    <div class="workflow-step" data-step-number="7"
+                        onclick="toggleWorkflowStep(this, 'chk_repl_settled_accounts')">
+                        <div class="step-icon" data-step="7"></div>
                         <div class="step-content">
                             <div class="step-info">
                                 <div class="step-label">Settled With Accounts</div>
@@ -621,7 +644,7 @@
                             Replacement Workflow
                         </div>
                         <div class="workflow-progress">
-                            <span class="progress-text" id="workflow-progress-text">0 of 6 completed</span>
+                            <span class="progress-text" id="workflow-progress-text">0 of 7 completed</span>
                             <div class="progress-bar-container">
                                 <div class="progress-bar-fill" id="workflow-progress-bar" style="width: 0%"></div>
                             </div>
@@ -691,8 +714,20 @@
                         </div>
                         <!-- Step 6 -->
                         <div class="workflow-step" data-step-number="6"
-                            onclick="toggleWorkflowStep(this, 'chk_repl_settled_accounts')">
+                            onclick="toggleWorkflowStep(this, 'chk_repl_settlement_mail')">
                             <div class="step-icon" data-step="6"></div>
+                            <div class="step-content">
+                                <div class="step-info">
+                                    <div class="step-label">Settlement Mail to Accounts</div>
+                                </div>
+                                <input type="checkbox" id="chk_repl_settlement_mail" class="step-checkbox"
+                                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+                            </div>
+                        </div>
+                        <!-- Step 7 -->
+                        <div class="workflow-step" data-step-number="7"
+                            onclick="toggleWorkflowStep(this, 'chk_repl_settled_accounts')">
+                            <div class="step-icon" data-step="7"></div>
                             <div class="step-content">
                                 <div class="step-info">
                                     <div class="step-label">Settled with Accounts</div>
@@ -917,6 +952,7 @@
             'chk_repl_mail_store',
             'chk_repl_invoice_gen',
             'chk_repl_invoice_sent',
+            'chk_repl_settlement_mail',
             'chk_repl_settled_accounts'
         ];
 
@@ -1042,6 +1078,9 @@
         }
         if (document.getElementById('chk_repl_invoice_sent')) {
             document.getElementById('chk_repl_invoice_sent').checked = claim.replacement_invoice_sent || false;
+        }
+        if (document.getElementById('chk_repl_settlement_mail')) {
+            document.getElementById('chk_repl_settlement_mail').checked = claim.settlement_mail_accounts || false;
         }
         if (document.getElementById('chk_repl_settled_accounts')) {
             document.getElementById('chk_repl_settled_accounts').checked = claim.replacement_settled_accounts || false;

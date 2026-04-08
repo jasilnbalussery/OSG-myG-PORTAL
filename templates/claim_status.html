@@ -88,18 +88,27 @@
                     <td colspan="4">{{ report_stats.completed }}</td>
 
                     <td>GST INVOICE BILLED</td>
-                    <td colspan="4">{{ report_stats.gst_invoice }}</td>
+                    <td>{{ report_stats.gst_invoice.lt5 }}</td>
+                    <td>{{ report_stats.gst_invoice.gt5 }}</td>
+                    <td>{{ report_stats.gst_invoice.gt10 }}</td>
+                    <td><strong>{{ report_stats.gst_invoice.total }}</strong></td>
                 </tr>
                 <tr>
                     <td rowspan="3" class="row-title">REJECTED</td>
                     <td rowspan="3" colspan="4">{{ report_stats.rejected }}</td>
 
                     <td class="bg-peach">PENDING SETTLEMENT FROM OSG</td>
-                    <td colspan="4">{{ report_stats.pending_settlement_osg }}</td>
+                    <td>{{ report_stats.pending_settlement_osg.lt5 }}</td>
+                    <td>{{ report_stats.pending_settlement_osg.gt5 }}</td>
+                    <td>{{ report_stats.pending_settlement_osg.gt10 }}</td>
+                    <td><strong>{{ report_stats.pending_settlement_osg.total }}</strong></td>
                 </tr>
                 <tr>
                     <td>SETTLEMENT MAIL SENT TO myG ACCOUNTS</td>
-                    <td colspan="4">{{ report_stats.settlement_mail_accounts }}</td>
+                    <td>{{ report_stats.settlement_mail_accounts.lt5 }}</td>
+                    <td>{{ report_stats.settlement_mail_accounts.gt5 }}</td>
+                    <td>{{ report_stats.settlement_mail_accounts.gt10 }}</td>
+                    <td><strong>{{ report_stats.settlement_mail_accounts.total }}</strong></td>
                 </tr>
                 <tr>
                     <td>SETTLED WITH ACCOUNTS</td>
@@ -421,6 +430,7 @@
             { label: 'Mail Sent to Store', done: claim.replacement_mail_store },
             { label: 'Invoice Generated', done: claim.replacement_invoice_gen },
             { label: 'Invoice Sent to Onsitego', done: claim.replacement_invoice_sent },
+            { label: 'Settlement Mail to Accounts', done: claim.settlement_mail_accounts },
             { label: 'Settled with Accounts', done: claim.replacement_settled_accounts }
         ];
 
@@ -428,7 +438,7 @@
 
         let html = `
             <div class="replacement-progress-section">
-                <h4><i class="ri-exchange-line"></i> Replacement Workflow (${completedCount}/6 completed)</h4>
+                <h4><i class="ri-exchange-line"></i> Replacement Workflow (${completedCount}/7 completed)</h4>
                 <div class="replacement-steps">
         `;
 

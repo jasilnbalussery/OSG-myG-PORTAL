@@ -9,7 +9,7 @@
             Replacement Workflow
         </div>
         <div class="workflow-progress">
-            <span class="progress-text" id="workflow-progress-text">0 of 6 completed</span>
+            <span class="progress-text" id="workflow-progress-text">0 of 7 completed</span>
             <div class="progress-bar-container">
                 <div class="progress-bar-fill" id="workflow-progress-bar" style="width: 0%"></div>
             </div>
@@ -83,9 +83,22 @@
             </div>
         </div>
 
-        <!-- Step 6: Settled with Accounts -->
-        <div class="workflow-step" data-step-number="6" onclick="toggleWorkflowStep(this, 'chk_repl_settled_accounts')">
+        <!-- Step 6: Settlement Mail to Accounts -->
+        <div class="workflow-step" data-step-number="6" onclick="toggleWorkflowStep(this, 'chk_repl_settlement_mail')">
             <div class="step-icon" data-step="6"></div>
+            <div class="step-content">
+                <div class="step-info">
+                    <div class="step-label">Settlement Mail to Accounts</div>
+                    <div class="step-description">Settlement mail sent to myG accounts</div>
+                </div>
+                <input type="checkbox" id="chk_repl_settlement_mail" class="step-checkbox"
+                    onclick="event.stopPropagation(); updateWorkflowProgress()">
+            </div>
+        </div>
+
+        <!-- Step 7: Settled with Accounts -->
+        <div class="workflow-step" data-step-number="7" onclick="toggleWorkflowStep(this, 'chk_repl_settled_accounts')">
+            <div class="step-icon" data-step="7"></div>
             <div class="step-content">
                 <div class="step-info">
                     <div class="step-label">Settled With Accounts</div>
@@ -161,6 +174,7 @@
             'chk_repl_mail_store',
             'chk_repl_invoice_gen',
             'chk_repl_invoice_sent',
+            'chk_repl_settlement_mail',
             'chk_repl_settled_accounts'
         ];
 
@@ -239,6 +253,7 @@
                 replacement_mail_store: document.getElementById('chk_repl_mail_store')?.checked || false,
                 replacement_invoice_gen: document.getElementById('chk_repl_invoice_gen')?.checked || false,
                 replacement_invoice_sent: document.getElementById('chk_repl_invoice_sent')?.checked || false,
+                replacement_settlement_mail: document.getElementById('chk_repl_settlement_mail')?.checked || false,
                 replacement_settled_accounts: document.getElementById('chk_repl_settled_accounts')?.checked || false,
                 complete: document.getElementById('chk_complete_repl')?.checked || false,
                 status: document.getElementById('updateStatus')?.value,
@@ -292,6 +307,7 @@
         document.getElementById('chk_repl_mail_store').checked = claim.replacement_mail_store || false;
         document.getElementById('chk_repl_invoice_gen').checked = claim.replacement_invoice_gen || false;
         document.getElementById('chk_repl_invoice_sent').checked = claim.replacement_invoice_sent || false;
+        document.getElementById('chk_repl_settlement_mail').checked = claim.settlement_mail_accounts || false;
         document.getElementById('chk_repl_settled_accounts').checked = claim.replacement_settled_accounts || false;
         document.getElementById('chk_complete_repl').checked = claim.complete || false;
 

@@ -221,6 +221,7 @@ const Modal = {
         this.setChecked('chk_repl_mail_store', claim.replacement_mail_store);
         this.setChecked('chk_repl_invoice_gen', claim.replacement_invoice_gen);
         this.setChecked('chk_repl_invoice_sent', claim.replacement_invoice_sent);
+        this.setChecked('chk_repl_settlement_mail', claim.settlement_mail_accounts);
         this.setChecked('chk_repl_settled_accounts', claim.replacement_settled_accounts);
         this.setChecked('chk_complete_repl', claim.complete);
 
@@ -271,6 +272,7 @@ const Modal = {
             replacement_mail_store: this.getChecked('chk_repl_mail_store'),
             replacement_invoice_gen: this.getChecked('chk_repl_invoice_gen'),
             replacement_invoice_sent: this.getChecked('chk_repl_invoice_sent'),
+            replacement_settlement_mail: this.getChecked('chk_repl_settlement_mail'),
             replacement_settled_accounts: this.getChecked('chk_repl_settled_accounts'),
             complete: this.getChecked('chk_complete_repl')
         };

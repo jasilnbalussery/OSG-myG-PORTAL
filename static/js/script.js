@@ -27,6 +27,7 @@ function renderWorkflowList(data) {
         steps.push({ label: "Mail Sent to Store", key: "replacement_mail_store" });
         steps.push({ label: "Invoice Generated", key: "replacement_invoice_gen" });
         steps.push({ label: "Invoice Sent", key: "replacement_invoice_sent" });
+        steps.push({ label: "Settlement Mail to Accounts", key: "settlement_mail_accounts" });
         steps.push({ label: "Settled with Accounts", key: "replacement_settled_accounts" });
 
     } else if (status === 'follow up') {
@@ -718,6 +719,7 @@ async function saveClaimChanges() {
     payload.replacement_mail_store = getReplCheckbox('chk_repl_mail_store');
     payload.replacement_invoice_gen = getReplCheckbox('chk_repl_invoice_gen');
     payload.replacement_invoice_sent = getReplCheckbox('chk_repl_invoice_sent');
+    payload.replacement_settlement_mail = getReplCheckbox('chk_repl_settlement_mail');
     payload.replacement_settled_accounts = getReplCheckbox('chk_repl_settled_accounts');
 
     // Complete flag (Column U)

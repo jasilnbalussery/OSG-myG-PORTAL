@@ -261,6 +261,10 @@ class ClaimWrapper:
         return self._bool("Replacement: Invoice Sent to OSG") or self._bool("Invoice Sent To Onsitego (Yes/No)")
     
     @property
+    def settlement_mail_accounts(self): 
+        return self._bool("Settlement Mail to Accounts(Yes/No)") or self._bool("Replacement: Settlement Mail to Accounts")
+        
+    @property
     def settled_with_accounts(self): 
         return self._bool("Replacement: Settled with Accounts") or self._bool("Settled With Accounts (Yes/No)")
     
@@ -293,6 +297,7 @@ class ClaimWrapper:
                 self.mail_sent_to_store and
                 self.invoice_generated and
                 self.invoice_sent_osg and
+                self.settlement_mail_accounts and
                 self.settled_with_accounts
             )
             if all_steps_done:
@@ -408,9 +413,9 @@ def dashboard():
         'completed': 0,
         'rejected': 0,
         'replacement_mail': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
-        'gst_invoice': 0,
-        'pending_settlement_osg': 0,
-        'settlement_mail_accounts': 0,
+        'gst_invoice': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'pending_settlement_osg': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'settlement_mail_accounts': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
         'settled_accounts': 0,
         'grand_total_status': 0,
         'grand_total_replacement': 0,
@@ -460,12 +465,24 @@ def dashboard():
             if c.settled_with_accounts:
                 report_stats['settled_accounts'] += 1
                 report_stats['grand_total_replacement'] += 1
+            elif c.settlement_mail_accounts:
+                report_stats['settlement_mail_accounts']['total'] += 1
+                report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5: report_stats['settlement_mail_accounts']['lt5'] += 1
+                elif repl_age <= 10: report_stats['settlement_mail_accounts']['gt5'] += 1
+                else: report_stats['settlement_mail_accounts']['gt10'] += 1
             elif c.invoice_sent_osg:
-                report_stats['pending_settlement_osg'] += 1
+                report_stats['pending_settlement_osg']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5: report_stats['pending_settlement_osg']['lt5'] += 1
+                elif repl_age <= 10: report_stats['pending_settlement_osg']['gt5'] += 1
+                else: report_stats['pending_settlement_osg']['gt10'] += 1
             elif c.invoice_generated:
-                report_stats['gst_invoice'] += 1
+                report_stats['gst_invoice']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5: report_stats['gst_invoice']['lt5'] += 1
+                elif repl_age <= 10: report_stats['gst_invoice']['gt5'] += 1
+                else: report_stats['gst_invoice']['gt10'] += 1
             else:
                 # mail_sent_to_store step OR replacement approved with no checkboxes yet
                 report_stats['replacement_mail']['total'] += 1
@@ -544,6 +561,9 @@ def download_report():
         if "replacement" in status or c.mail_sent_to_store:
             if c.settled_with_accounts:
                 report_stats['settled_accounts'] += 1
+                report_stats['grand_total_replacement'] += 1
+            elif c.settlement_mail_accounts:
+                report_stats['settlement_mail_accounts'] += 1
                 report_stats['grand_total_replacement'] += 1
             elif c.invoice_sent_osg:
                 report_stats['pending_settlement_osg'] += 1
@@ -1117,6 +1137,7 @@ def get_claim(id):
         "replacement_mail_store": parse_bool(found.data.get("Mail Sent To Store (Yes/No)")),
         "replacement_invoice_gen": parse_bool(found.data.get("Invoice Generated (Yes/No)")),
         "replacement_invoice_sent": parse_bool(found.data.get("Invoice Sent To Onsitego (Yes/No)")),
+        "settlement_mail_accounts": parse_bool(found.data.get("Settlement Mail to Accounts(Yes/No)")),
         "replacement_settled_accounts": parse_bool(found.data.get("Settled With Accounts (Yes/No)")),
         
         # Complete flag
@@ -1210,6 +1231,13 @@ def update_claim(id):
         if should_update_date('replacement_invoice_sent', existing_date):
             payload["Invoice Sent To Onsitego Date"] = today_str
 
+    # Auto-date logic for: Settlement Mail to Accounts
+    if 'replacement_settlement_mail' in data: 
+        payload["Settlement Mail to Accounts(Yes/No)"] = fmt_bool(data['replacement_settlement_mail'])
+        existing_date = existing_claim.data.get("Settlement Mail to Accounts Date") if existing_claim else None
+        if should_update_date('replacement_settlement_mail', existing_date):
+            payload["Settlement Mail to Accounts Date"] = today_str
+
     if 'replacement_settled_accounts' in data: payload["Settled With Accounts (Yes/No)"] = fmt_bool(data['replacement_settled_accounts'])
     
     # Complete flag
@@ -1225,6 +1253,7 @@ def update_claim(id):
         payload["Mail Sent To Store (Yes/No)"] = ""
         payload["Invoice Generated (Yes/No)"] = ""
         payload["Invoice Sent To Onsitego (Yes/No)"] = ""
+        payload["Settlement Mail to Accounts(Yes/No)"] = ""
         payload["Settled With Accounts (Yes/No)"] = ""
     
     # If status is 'Replacement Approved', clear Repair Workflow data
@@ -1327,9 +1356,9 @@ def claim_status():
         'completed': 0,
         'rejected': 0,
         'replacement_mail': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
-        'gst_invoice': 0,
-        'pending_settlement_osg': 0,
-        'settlement_mail_accounts': 0,
+        'gst_invoice': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'pending_settlement_osg': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
+        'settlement_mail_accounts': {'lt5': 0, 'gt5': 0, 'gt10': 0, 'total': 0},
         'settled_accounts': 0,
         'grand_total_status': 0,
         'grand_total_replacement': 0,
@@ -1373,12 +1402,24 @@ def claim_status():
             if c.settled_with_accounts:
                 report_stats['settled_accounts'] += 1
                 report_stats['grand_total_replacement'] += 1
+            elif c.settlement_mail_accounts:
+                report_stats['settlement_mail_accounts']['total'] += 1
+                report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5: report_stats['settlement_mail_accounts']['lt5'] += 1
+                elif repl_age <= 10: report_stats['settlement_mail_accounts']['gt5'] += 1
+                else: report_stats['settlement_mail_accounts']['gt10'] += 1
             elif c.invoice_sent_osg:
-                report_stats['pending_settlement_osg'] += 1
+                report_stats['pending_settlement_osg']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5: report_stats['pending_settlement_osg']['lt5'] += 1
+                elif repl_age <= 10: report_stats['pending_settlement_osg']['gt5'] += 1
+                else: report_stats['pending_settlement_osg']['gt10'] += 1
             elif c.invoice_generated:
-                report_stats['gst_invoice'] += 1
+                report_stats['gst_invoice']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
+                if repl_age <= 5: report_stats['gst_invoice']['lt5'] += 1
+                elif repl_age <= 10: report_stats['gst_invoice']['gt5'] += 1
+                else: report_stats['gst_invoice']['gt10'] += 1
             else:
                 report_stats['replacement_mail']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
@@ -1450,6 +1491,7 @@ def claim_status_lookup():
                 'replacement_mail_store': parse_bool(c.data.get("Mail Sent To Store (Yes/No)")),
                 'replacement_invoice_gen': parse_bool(c.data.get("Invoice Generated (Yes/No)")),
                 'replacement_invoice_sent': parse_bool(c.data.get("Invoice Sent To Onsitego (Yes/No)")),
+                'settlement_mail_accounts': parse_bool(c.data.get("Settlement Mail to Accounts(Yes/No)")),
                 'replacement_settled_accounts': parse_bool(c.data.get("Settled With Accounts (Yes/No)")),
             })
         
@@ -1528,6 +1570,7 @@ def get_analytics_data():
                 'replacement_mail_store': parse_bool(claim.data.get("Mail Sent To Store (Yes/No)")),
                 'replacement_invoice_gen': parse_bool(claim.data.get("Invoice Generated (Yes/No)")),
                 'replacement_invoice_sent': parse_bool(claim.data.get("Invoice Sent To Onsitego (Yes/No)")),
+                'settlement_mail_accounts': parse_bool(claim.data.get("Settlement Mail to Accounts(Yes/No)")),
                 'replacement_settled_accounts': parse_bool(claim.data.get("Settled With Accounts (Yes/No)")),
                 
                 # Complete flag

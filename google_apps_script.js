@@ -34,6 +34,8 @@ function _getSheet() {
             "Replacement: Mail to Store",
             "Replacement: Invoice Generated",
             "Replacement: Invoice Sent to OSG",
+            "Settlement Mail to Accounts(Yes/No)",
+            "Settlement Mail to Accounts Date",
             "Replacement: Settled with Accounts",
             // Complete Flag (Column U)
             "Complete",
