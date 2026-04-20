@@ -1,0 +1,321 @@
+/* 
+ * Enhanced Workflow Modal Styles
+ * Professional, Visual, Interactive
+ */
+
+/* =============================================================================
+   MODAL WORKFLOW SECTION - ENHANCED
+   ============================================================================= */
+
+.workflow-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+}
+
+.workflow-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.workflow-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.workflow-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.progress-bar-container {
+    width: 150px;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+/* Workflow Steps */
+.workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.workflow-step:hover {
+    border-color: #4facfe;
+    box-shadow: 0 4px 12px rgba(79, 172, 254, 0.15);
+    transform: translateX(4px);
+}
+
+.workflow-step.completed {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-color: #28a745;
+}
+
+.workflow-step.completed .step-icon {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+/* Step Number/Icon */
+.step-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.workflow-step.completed .step-icon::before {
+    content: "✓";
+    font-size: 1.3rem;
+}
+
+.workflow-step:not(.completed) .step-icon::before {
+    content: attr(data-step);
+}
+
+/* Step Content */
+.step-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.step-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.step-label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.step-description {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.workflow-step.completed .step-label {
+    color: #155724;
+}
+
+/* Enhanced Checkbox */
+.step-checkbox {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    accent-color: #4facfe;
+    transform: scale(1.2);
+    transition: transform 0.2s ease;
+}
+
+.step-checkbox:hover {
+    transform: scale(1.3);
+}
+
+/* Completion Status Badge */
+.completion-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 20px;
+}
+
+.completion-badge.incomplete {
+    background: #fff3cd;
+    color: #856404;
+    border: 2px solid #ffeaa7;
+}
+
+.completion-badge.complete {
+    background: #d4edda;
+    color: #155724;
+    border: 2px solid #c3e6cb;
+}
+
+/* TAT Display */
+.tat-display {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    padding: 16px;
+    border-radius: 10px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tat-label {
+    font-weight: 600;
+    color: #0d47a1;
+    font-size: 0.95rem;
+}
+
+.tat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1565c0;
+}
+
+.tat-unit {
+    font-size: 0.9rem;
+    color: #1976d2;
+    margin-left: 4px;
+}
+
+/* Save Button Enhancement */
+.save-changes-btn {
+    width: 100%;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    margin-top: 20px;
+}
+
+.save-changes-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+}
+
+.save-changes-btn:active {
+    transform: translateY(0);
+}
+
+.save-changes-btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Animations */
+@keyframes checkPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.workflow-step.completed .step-icon {
+    animation: checkPulse 0.3s ease;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .workflow-step {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .step-content {
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .progress-bar-container {
+        width: 100px;
+    }
+}
+
+/* Loading State */
+.workflow-section.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.workflow-section.loading::after {
+    content: "Saving...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* Success Animation */
+@keyframes successPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+}
+
+.save-success {
+    animation: successPulse 0.6s ease;
+}

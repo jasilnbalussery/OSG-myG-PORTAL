@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.DS_Store
+*.db
+site.db
+instance/
+uploads/
+cache.pkl
+debug_output.json

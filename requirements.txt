@@ -1,0 +1,8 @@
+flask
+pandas
+openpyxl
+requests
+pytz
+flask-sqlalchemy
+xlsxwriter
+gunicorn
