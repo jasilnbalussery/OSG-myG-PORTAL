@@ -191,6 +191,7 @@
             <tbody id="claimsTableBody">
                 {% for claim in claims %}
                 <tr data-completed="{{ 'true' if claim.complete else 'false' }}"
+                    data-status="{{ (claim.status or '') | lower | trim }}"
                     data-date="{{ claim.created_at.strftime('%Y-%m-%d') }}"
                     data-tat="{{ claim.tat if claim.tat is not none else '' }}">
                     <td>
@@ -542,6 +543,7 @@
                     <option value="Replacement approved">Replacement Approved</option>
                     <option value="Rejected">Rejected</option>
                     <option value="No Issue/Oncall Resolution">No Issue/Oncall Resolution</option>
+                    <option value="Cancelled">Cancelled</option>
                 </select>
             </div>
         </div>

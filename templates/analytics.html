@@ -55,6 +55,7 @@
                         <label class="ms-option"><input type="checkbox" class="status-cb" value="Replacement Completed" onchange="updateStatusLabel()"><span>Replacement Completed</span></label>
                         <label class="ms-option"><input type="checkbox" class="status-cb" value="Rejected" onchange="updateStatusLabel()"><span>Rejected</span></label>
                         <label class="ms-option"><input type="checkbox" class="status-cb" value="No Issue/Oncall Resolution" onchange="updateStatusLabel()"><span>No Issue/Oncall Resolution</span></label>
+                        <label class="ms-option"><input type="checkbox" class="status-cb" value="Cancelled" onchange="updateStatusLabel()"><span>Cancelled</span></label>
                     </div>
                 </div>
             </div>
@@ -213,6 +214,18 @@
                 <h4>No Issue / On Call</h4>
                 <div class="kpi-value" id="kpi-no-issue">0</div>
                 <p class="kpi-subtitle">Resolved on call</p>
+            </div>
+        </div>
+
+        <div class="kpi-card glass-panel red" id="card-cancelled" onclick="filterByCard('cancelled')"
+            style="cursor:pointer;">
+            <div class="kpi-icon">
+                <i class="ri-close-circle-line"></i>
+            </div>
+            <div class="kpi-content">
+                <h4>Cancelled</h4>
+                <div class="kpi-value" id="kpi-cancelled">0</div>
+                <p class="kpi-subtitle">Cancelled claims</p>
             </div>
         </div>
     </div>

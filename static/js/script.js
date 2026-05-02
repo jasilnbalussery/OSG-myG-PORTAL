@@ -429,6 +429,7 @@ function filterClaims(type) {
     for (let i = 1; i < tr.length; i++) {
         const row = tr[i];
         const isComplete = row.getAttribute('data-completed') === 'true';
+        const rowStatus = (row.getAttribute('data-status') || '').toLowerCase().trim();
 
         if (type === 'all') {
             row.style.display = "";
@@ -437,6 +438,9 @@ function filterClaims(type) {
             else row.style.display = "none";
         } else if (type === 'completed') {
             if (isComplete) row.style.display = "";
+            else row.style.display = "none";
+        } else if (type === 'cancelled') {
+            if (rowStatus === 'cancelled') row.style.display = "";
             else row.style.display = "none";
         }
     }

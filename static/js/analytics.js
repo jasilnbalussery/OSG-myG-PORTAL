@@ -136,6 +136,11 @@ function updateKPIs() {
     const kpiNoIssueEl = document.getElementById('kpi-no-issue');
     if (kpiNoIssueEl) kpiNoIssueEl.textContent = noIssueClaims.length;
 
+    // Cancelled Claims
+    const cancelledClaims = claims.filter(c => (c.status || '').toLowerCase().trim() === 'cancelled');
+    const kpiCancelledEl = document.getElementById('kpi-cancelled');
+    if (kpiCancelledEl) kpiCancelledEl.textContent = cancelledClaims.length;
+
     // Today's New Claims
     const today = new Date().toISOString().split('T')[0];
     const todayClaims = claims.filter(c =>
@@ -855,7 +860,8 @@ function filterByCard(cardType) {
         'today': "— Today's New",
         'month': '— This Month',
         'rejected': '— Rejected',
-        'no-issue': '— No Issue / On Call Resolution'
+        'no-issue': '— No Issue / On Call Resolution',
+        'cancelled': '— Cancelled'
     };
     if (labelEl) {
         labelEl.textContent = labelMap[cardType] || '';
@@ -925,6 +931,9 @@ function filterByCard(cardType) {
                 const s = (c.status || '').toLowerCase();
                 return s.includes('no issue') || s === 'on call resolution' || s === 'oncall resolution';
             });
+            break;
+        case 'cancelled':
+            filteredClaims = allClaims.filter(c => (c.status || '').toLowerCase().trim() === 'cancelled');
             break;
         default:
             filteredClaims = [...allClaims];

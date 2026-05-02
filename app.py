@@ -419,6 +419,7 @@ def dashboard():
     total = len(claims)
     pending = len([c for c in claims if not c.complete])
     completed = len([c for c in claims if c.complete])
+    cancelled = len([c for c in claims if (c.status or '').strip().lower() == 'cancelled'])
     
     # Calculate Avg TAT
     tat_values = [c.tat for c in claims if c.tat is not None and isinstance(c.tat, int)]
@@ -551,7 +552,7 @@ def dashboard():
                 else:
                     report_stats['replacement_mail']['gt10'] += 1
 
-    return render_template('dashboard.html', claims=claims, total=total, pending=pending, completed=completed, avg_tat=avg_tat, report_stats=report_stats)
+    return render_template('dashboard.html', claims=claims, total=total, pending=pending, completed=completed, cancelled=cancelled, avg_tat=avg_tat, report_stats=report_stats)
 
 @app.route('/health')
 def health_check():
