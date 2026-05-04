@@ -131,27 +131,18 @@
                 <td colspan="4">{{ report_stats.completed }}</td>
                 
                 <td>GST INVOICE BILLED</td>
-                <td>{{ report_stats.gst_invoice.lt5 }}</td>
-                <td>{{ report_stats.gst_invoice.gt5 }}</td>
-                <td>{{ report_stats.gst_invoice.gt10 }}</td>
-                <td><strong>{{ report_stats.gst_invoice.total }}</strong></td>
+                <td colspan="4">{{ report_stats.gst_invoice.total }}</td>
             </tr>
             <tr>
                 <td rowspan="3" class="row-title">REJECTED</td>
                 <td rowspan="3" colspan="4">{{ report_stats.rejected }}</td>
                 
                 <td class="bg-peach">PENDING SETTLEMENT FROM OSG</td>
-                <td>{{ report_stats.pending_settlement_osg.lt5 }}</td>
-                <td>{{ report_stats.pending_settlement_osg.gt5 }}</td>
-                <td>{{ report_stats.pending_settlement_osg.gt10 }}</td>
-                <td><strong>{{ report_stats.pending_settlement_osg.total }}</strong></td>
+                <td colspan="4">{{ report_stats.pending_settlement_osg.total }}</td>
             </tr>
             <tr>
                 <td>SETTLEMENT MAIL SENT TO myG ACCOUNTS</td>
-                <td>{{ report_stats.settlement_mail_accounts.lt5 }}</td>
-                <td>{{ report_stats.settlement_mail_accounts.gt5 }}</td>
-                <td>{{ report_stats.settlement_mail_accounts.gt10 }}</td>
-                <td><strong>{{ report_stats.settlement_mail_accounts.total }}</strong></td>
+                <td colspan="4">{{ report_stats.settlement_mail_accounts.total }}</td>
             </tr>
             <tr>
                 <td>SETTLED WITH ACCOUNTS</td>

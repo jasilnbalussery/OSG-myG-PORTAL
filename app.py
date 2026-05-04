@@ -441,7 +441,7 @@ def dashboard():
         'report_date': now.strftime('%d-%m-%Y')
     }
 
-    def _parse_date(raw):
+    def _parse_date(raw, claim_age=None):
         if not raw or str(raw).strip() in ('', 'nan', 'None'): return None
         s = str(raw).strip()[:10]
         dt = None
@@ -451,12 +451,18 @@ def dashboard():
                 break
             except: continue
         
-        # If it's a future date, Google Sheets likely interpreted DD-MM as MM-DD
-        if dt and (dt - now).days > 1:
-            try:
-                if '-' in s and len(s.split('-')[0]) == 4:
-                    dt = datetime.datetime.strptime(s, '%Y-%d-%m')
-            except: pass
+        # Google sheets DD-MM vs MM-DD swap fix
+        if dt:
+            needs_swap = (dt - now).days > 1
+            if not needs_swap and claim_age is not None:
+                parsed_age = (now - dt).days
+                if parsed_age > claim_age + 1:
+                    needs_swap = True
+            if needs_swap:
+                try:
+                    if '-' in s and len(s.split('-')[0]) == 4:
+                        dt = datetime.datetime.strptime(s, '%Y-%d-%m')
+                except: pass
         return dt
 
     for c in claims:
@@ -491,7 +497,7 @@ def dashboard():
             report_stats['grand_total_status'] += 1
             if age <= 5:
                 report_stats['pending']['lt5'] += 1
-            elif age <= 10:
+            elif age < 10:
                 report_stats['pending']['gt5'] += 1
             else:
                 report_stats['pending']['gt10'] += 1
@@ -506,48 +512,63 @@ def dashboard():
                 report_stats['settlement_mail_accounts']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
                 if repl_age <= 5: report_stats['settlement_mail_accounts']['lt5'] += 1
-                elif repl_age <= 10: report_stats['settlement_mail_accounts']['gt5'] += 1
+                elif repl_age < 10: report_stats['settlement_mail_accounts']['gt5'] += 1
                 else: report_stats['settlement_mail_accounts']['gt10'] += 1
             elif c.invoice_sent_osg:
                 report_stats['pending_settlement_osg']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
-                osg_dt = _parse_date(c.invoice_sent_osg_date)
+                osg_dt = _parse_date(c.invoice_sent_osg_date, age)
                 if osg_dt:
                     osg_age = max(0, (now - osg_dt).days)
                 else:
-                    inv_gen_dt = _parse_date(c.invoice_generated_date)
+                    inv_gen_dt = _parse_date(c.invoice_generated_date, age)
                     if inv_gen_dt:
                         osg_age = max(0, (now - inv_gen_dt).days)
                     else:
                         osg_age = max(0, repl_age)
                 if osg_age <= 5: report_stats['pending_settlement_osg']['lt5'] += 1
-                elif osg_age <= 10: report_stats['pending_settlement_osg']['gt5'] += 1
+                elif osg_age < 10: report_stats['pending_settlement_osg']['gt5'] += 1
                 else: report_stats['pending_settlement_osg']['gt10'] += 1
             elif c.invoice_generated:
                 report_stats['gst_invoice']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
                 # Age from Invoice Generated Date (when GST invoice was billed)
                 # Fallback chain: Invoice Generated Date → Mail Sent To Store Date → repl_age
-                inv_gen_dt = _parse_date(c.invoice_generated_date)
+                inv_gen_dt = _parse_date(c.invoice_generated_date, age)
                 if inv_gen_dt:
                     gst_age = max(0, (now - inv_gen_dt).days)
                 else:
-                    store_dt = _parse_date(c.mail_sent_to_store_date)
+                    store_dt = _parse_date(c.mail_sent_to_store_date, age)
                     if store_dt:
                         gst_age = max(0, (now - store_dt).days)
                     else:
                         gst_age = max(0, repl_age)
 
                 if gst_age <= 5: report_stats['gst_invoice']['lt5'] += 1
-                elif gst_age <= 10: report_stats['gst_invoice']['gt5'] += 1
+                elif gst_age < 10: report_stats['gst_invoice']['gt5'] += 1
                 else: report_stats['gst_invoice']['gt10'] += 1
             else:
                 # mail_sent_to_store step OR replacement approved with no checkboxes yet
                 report_stats['replacement_mail']['total'] += 1
                 report_stats['grand_total_replacement'] += 1
-                if repl_age <= 5:
+                
+                store_dt = _parse_date(c.mail_sent_to_store_date, age)
+                if store_dt:
+                    mail_age = max(0, (now - store_dt).days)
+                else:
+                    approval_dt = _parse_date(c.approval_mail_date, age)
+                    if approval_dt:
+                        mail_age = max(0, (now - approval_dt).days)
+                    else:
+                        # Fallback to 0 if replacement just started, otherwise use repl_age
+                        if not settled_date_raw or str(settled_date_raw).strip() in ('', 'nan', 'None'):
+                            mail_age = 0
+                        else:
+                            mail_age = max(0, repl_age)
+
+                if mail_age <= 5:
                     report_stats['replacement_mail']['lt5'] += 1
-                elif repl_age <= 10:
+                elif mail_age < 10:
                     report_stats['replacement_mail']['gt5'] += 1
                 else:
                     report_stats['replacement_mail']['gt10'] += 1
@@ -611,7 +632,7 @@ def download_report():
             report_stats['grand_total_status'] += 1
             if age <= 5:
                 report_stats['pending']['lt5'] += 1
-            elif age <= 10:
+            elif age < 10:
                 report_stats['pending']['gt5'] += 1
             else:
                 report_stats['pending']['gt10'] += 1
@@ -634,7 +655,7 @@ def download_report():
                 report_stats['grand_total_replacement'] += 1
                 if repl_age <= 5:
                     report_stats['replacement_mail']['lt5'] += 1
-                elif repl_age <= 10:
+                elif repl_age < 10:
                     report_stats['replacement_mail']['gt5'] += 1
                 else:
                     report_stats['replacement_mail']['gt10'] += 1
