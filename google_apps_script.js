@@ -211,6 +211,12 @@ function doPost(e) {
       }
 
       sheet.getRange(rowIndex, 1, 1, existingValues.length).setValues([existingValues]);
+
+      // Re-apply center alignment on update too
+      const updatedRange = sheet.getRange(rowIndex, 1, 1, existingValues.length);
+      updatedRange.setHorizontalAlignment("center");
+      updatedRange.setVerticalAlignment("middle");
+
       if (submittedDateIdx !== -1) {
         sheet.getRange(rowIndex, submittedDateIdx + 1).setNumberFormat("@STRING@");
       }
@@ -248,8 +254,14 @@ function doPost(e) {
 
       sheet.appendRow(rowData);
 
+      // Apply center alignment to the newly inserted row
+      const newRowNum = sheet.getLastRow();
+      const newRowRange = sheet.getRange(newRowNum, 1, 1, headers.length);
+      newRowRange.setHorizontalAlignment("center");
+      newRowRange.setVerticalAlignment("middle");
+
       if (submittedDateIdx !== -1) {
-        sheet.getRange(sheet.getLastRow(), submittedDateIdx + 1).setNumberFormat("@STRING@");
+        sheet.getRange(newRowNum, submittedDateIdx + 1).setNumberFormat("@STRING@");
       }
 
       return ContentService.createTextOutput(JSON.stringify({
