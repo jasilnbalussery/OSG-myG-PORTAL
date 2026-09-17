@@ -419,7 +419,16 @@ class ClaimWrapper:
     @property
     def claim_settled_date(self): return self.data.get("Claim Settled Date")
     @property
-    def remarks(self): return self.data.get("Remarks")
+    def remarks(self): return self.data.get("Remarks") or self.data.get("remarks")
+    @property
+    def onsitego_status(self):
+        # Check sheet header key first, then DB column name
+        for k, v in self.data.items():
+            if "onsitego" in str(k).lower() and "status" in str(k).lower():
+                val = str(v).strip()
+                if val.lower() not in ('nan', 'none', 'nat', ''):
+                    return val
+        return None
     @property
     def status(self): return self.data.get("Status")
     
@@ -2146,6 +2155,8 @@ def claim_status_lookup():
                 'follow_up_date': c.follow_up_date or '',
                 'tat': c.tat,
                 'complete': c.complete,
+                'remarks': c.remarks or '',
+                'onsitego_status': c.onsitego_status or '',
                 'replacement_confirmation': parse_bool(c.data.get("Customer Confirmation")),
                 'replacement_osg_approval': parse_bool(c.data.get("Approval Mail Received From Onsitego (Yes/No)")),
                 'replacement_mail_store': parse_bool(c.data.get("Mail Sent To Store (Yes/No)")),
@@ -3764,12 +3775,15 @@ def start_sheet_poller():
                     db_row = db_dict.get(cid, {})
                     
                     # Extract sheet Remarks, Onsitego, and SR No
+                    # Note: sheet may have both 'REMARKS' and 'Remarks' columns — pick first non-empty
                     s_remarks = ""
                     s_onsitego = ""
                     s_sr_no = ""
                     for k, v in row.items():
                         if str(k).strip().lower() == "remarks":
-                            s_remarks = str(v).strip()
+                            val = str(v).strip()
+                            if not s_remarks and val and val.lower() not in ('nan', 'none', 'nat'):
+                                s_remarks = val  # first non-empty wins
                         elif "onsitego" in str(k).lower() and "status" in str(k).lower():
                             s_onsitego = str(v).strip()
                         elif str(k).strip().lower() == "sr no" or str(k).strip().lower() == "sr_no":
@@ -3800,13 +3814,15 @@ def start_sheet_poller():
                        (s_sr_no and s_sr_no.lower() != db_sr_no.lower()):
                         print(f"[POLLER] Detected change in sheet for Claim {cid} - Syncing partial data to DB")
                         
-                        # Build a partial dictionary with only the fields we want to pull from Google Sheets
+                        # Build a partial dictionary with only the fields we want to pull from Google Sheets.
+                        # Always include BOTH remarks and onsitego (when they have values) so pg_sync
+                        # can append them to follow_up_notes even if only one of them changed.
                         partial_row = {
                             "Claim ID": cid
                         }
-                        if s_remarks and s_remarks.lower() != db_remarks.lower():
+                        if s_remarks:  # always include if non-empty
                             partial_row["Remarks"] = s_remarks
-                        if s_onsitego and s_onsitego.lower() != db_onsitego.lower():
+                        if s_onsitego:  # always include if non-empty
                             partial_row["ONSITEGO - STATUS"] = s_onsitego
                         if s_sr_no and s_sr_no.lower() != db_sr_no.lower():
                             partial_row["SR No"] = s_sr_no

@@ -246,13 +246,15 @@ def upsert_claim_to_postgres(claim_data: dict, source: str = "sheet") -> dict:
                 existing_dict = dict(zip(col_names, existing_claim_tuple))
 
             # Dynamically append Remarks and ONSITEGO STATUS to Follow Up Notes
+            # Note: sheet may have both 'REMARKS' (uppercase) and 'Remarks' columns — pick first non-empty
             remarks_val = ""
             remarks_key = ""
             for k, v in claim_data.items():
                 if str(k).strip().lower() == "remarks":
-                    remarks_val = str(v).strip()
-                    remarks_key = k
-                    break
+                    val = str(v).strip()
+                    if not remarks_val and val and val.lower() not in ('nan', 'none', 'nat'):
+                        remarks_val = val  # first non-empty wins
+                        remarks_key = k
             
             # Find onsitego status from keys (case-insensitive)
             onsitego_val = ""
@@ -284,7 +286,7 @@ def upsert_claim_to_postgres(claim_data: dict, source: str = "sheet") -> dict:
             ts = datetime.datetime.now().strftime('%d/%m/%Y, %I:%M:%S %p').lower()
             
             appended = False
-            if remarks_val and remarks_val.lower() != old_remarks.lower() and remarks_val.lower() not in notes_val.lower():
+            if remarks_val and remarks_val.lower() != old_remarks.lower():
                 notes_val += f"\n[{ts}] [REMARK]: {remarks_val}"
                 appended = True
             if onsitego_val and onsitego_val.lower() != old_onsitego.lower() and onsitego_val.lower() not in notes_val.lower():

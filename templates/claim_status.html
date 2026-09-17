@@ -315,8 +315,23 @@
                                 <div class="info-val follow-up-box" style="background:#f9fafb;padding:0.75rem 1rem;border-radius:8px;margin-top:0.35rem;font-size:0.88rem;line-height:1.6;color:#4b5563;word-wrap:break-word;">
                                     ${claim.follow_up_notes ? formatFollowUpHistory(claim.follow_up_notes) : '<span style="color:#9ca3af;font-style:italic;">No follow-up notes yet</span>'}
                                 </div>
-
                             </div>
+                            ${claim.onsitego_status ? `
+                            <div class="status-info-item">
+                                <label><i class="ri-shield-check-line" style="margin-right:4px;"></i>Onsitego Status</label>
+                                <div class="info-val" style="margin-top:0.35rem;">
+                                    <span style="display:inline-block;padding:0.3rem 0.85rem;border-radius:20px;font-size:0.82rem;font-weight:600;background:rgba(20,184,166,0.12);color:#0d9488;border:1px solid rgba(20,184,166,0.3);">
+                                        ${claim.onsitego_status}
+                                    </span>
+                                </div>
+                            </div>` : ''}
+                            ${claim.remarks ? `
+                            <div class="status-info-item">
+                                <label><i class="ri-chat-3-line" style="margin-right:4px;"></i>Remarks</label>
+                                <div class="info-val" style="background:#fffbeb;padding:0.6rem 0.9rem;border-radius:8px;margin-top:0.35rem;font-size:0.88rem;color:#92400e;border-left:3px solid #f59e0b;word-wrap:break-word;">
+                                    ${claim.remarks}
+                                </div>
+                            </div>` : ''}
                         </div>
 
                         <!-- Issue -->
