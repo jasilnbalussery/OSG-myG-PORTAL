@@ -136,11 +136,11 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const today = new Date();
-        const lastWeek = new Date(today);
-        lastWeek.setDate(lastWeek.getDate() - 7);
+        const ninetyDaysAgo = new Date(today);
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
         
         document.getElementById('toDate').value = today.toISOString().split('T')[0];
-        document.getElementById('fromDate').value = lastWeek.toISOString().split('T')[0];
+        document.getElementById('fromDate').value = ninetyDaysAgo.toISOString().split('T')[0];
         
         document.getElementById('fromDate').addEventListener('change', () => fetchReport(true));
         document.getElementById('toDate').addEventListener('change', () => fetchReport(true));
