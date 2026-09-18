@@ -25,3 +25,13 @@ force_test3.py
 debug_output.json
 whatsapp_debug_log.txt
 bandit_report.txt
+
+# Large history/log files (may contain secrets)
+may_june_history.txt
+work_history.txt
+full_ai_achievements.txt
+summaries.txt
+all_work_summary.txt
+wa_backfill_plan.txt
+inspect_out.txt
+missing_projects.txt

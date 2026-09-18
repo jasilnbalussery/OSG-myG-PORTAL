@@ -1,0 +1,35 @@
+# WhatsApp Backfill Plan — Claims updated after July 9, 2026
+
+## Current State
+- `WHATSAPP_CUTOFF_DATE = datetime.datetime(2099, 1, 1)` → **ALL messages BLOCKED**
+- WA is triggered only on status change via the portal save route
+- Claims registered/updated after July 9 **never received** their notification
+
+## What Needs to Happen
+
+### Step 1 — Set the Cutoff Date (Enable WA for new claims)
+Change `WHATSAPP_CUTOFF_DATE` to `2026-07-09` so future saves trigger messages for all claims from July 9 onward.
+
+### Step 2 — Backfill Script (Send missed messages)
+A one-time script to send WA notifications to claims that:
+- Have `synced_at` or `date` > 2026-07-09
+- Have a meaningful status (Registered, Repair Completed, Replacement Approved, Rejected)
+- Have NOT already received a WA notification (`Last_Notified_Status` is empty or different from current status)
+
+### Templates to Use
+| Status               | Template                             | Params               |
+|----------------------|--------------------------------------|----------------------|
+| REGISTERED           | myg_onsitego_registered_main         | [name, model, sr_no] |
+| REPAIR COMPLETED     | myg_onsitego_repair_completed_main   | [name, sr_no]        |
+| REPLACEMENT APPROVED | myg_onsitego_replacement_main        | [name, model]        |
+| REJECTED             | osg_clm_reject                       | [name]               |
+
+### Step 3 — Safety Controls
+- Rate limit: 1 message per second (API limit)
+- Dry-run mode: preview list before sending
+- Skip if mobile number is invalid/empty
+- Skip if `Last_Notified_Status` already matches current status
+- Log every send to `whatsapp_backfill_log.txt`
+
+### Backfill Scope (estimated)
+Claims updated after July 9 with notifiable status will be queried first (dry-run).

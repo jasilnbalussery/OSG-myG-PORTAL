@@ -1,0 +1,171 @@
+﻿
+============================================================
+SLIDE 0 | layout: 'Cover slide layout' | shapes: 1
+============================================================
+  [Ω╖╕δú╣ 1] type=GROUP (6) pos=(0,0.22) size=(13.33x2.19) text=''
+
+============================================================
+SLIDE 1 | layout: 'Section Break Slide layout' | shapes: 1
+============================================================
+  [Group 5] type=GROUP (6) pos=(7.61,3.11) size=(5.62x1.29) text=''
+
+============================================================
+SLIDE 2 | layout: '3_Agenda slide layout' | shapes: 6
+============================================================
+  [∞é¼Ω░üφÿò: δæÑΩ╖╝ δ¬¿∞ä£δª¼ 31] type=AUTO_SHAPE (1) pos=(5.94,0.88) size=(6.93x5.98) text=''
+  [TextBox 3] type=TEXT_BOX (17) pos=(0.47,0.42) size=(4.13x1.92) text='Agenda Style'
+  [Group 3] type=GROUP (6) pos=(6.16,1.41) size=(6.49x1.19) text=''
+  [Group 8] type=GROUP (6) pos=(6.17,2.66) size=(6.49x1.19) text=''
+  [Group 13] type=GROUP (6) pos=(6.18,3.9) size=(6.49x1.19) text=''
+  [Group 18] type=GROUP (6) pos=(6.18,5.15) size=(6.49x1.19) text=''
+
+============================================================
+SLIDE 3 | layout: 'Contents slide layout' | shapes: 25
+============================================================
+  [Text Placeholder 1] type=PLACEHOLDER (14) pos=(0.35,0.37) size=(12.66x0.79) text='Timeline Style'
+  [Freeform: Shape 4] type=FREEFORM (5) pos=(6.18,2.12) size=(2.29x2.4) text=''
+  [Freeform: Shape 5] type=FREEFORM (5) pos=(4.97,4.1) size=(2.29x2.44) text=''
+  [Arrow: Right 6] type=AUTO_SHAPE (1) pos=(0,5.32) size=(5.21x1.45) text=''
+  [Freeform: Shape 7] type=FREEFORM (5) pos=(8.12,2.12) size=(4.23x1.45) text=''
+  [∞ºü∞äá ∞ù░Ω▓░∞äá 63] type=LINE (9) pos=(0,6.05) size=(5.21x0) text=''
+  [∞₧É∞£áφÿò: δÅäφÿò 64] type=FREEFORM (5) pos=(5.5,4.19) size=(1.11x1.86) text=''
+  [∞₧É∞£áφÿò: δÅäφÿò 65] type=FREEFORM (5) pos=(6.95,2.51) size=(1.17x1.86) text=''
+  [∞ºü∞äá ∞ù░Ω▓░∞äá 66] type=LINE (9) pos=(8.55,2.84) size=(3.81x0.0) text=''
+  [Ω╖╕δú╣ 67] type=GROUP (6) pos=(6.32,4.72) size=(0.62x0.96) text=''
+  [Ω╖╕δú╣ 70] type=GROUP (6) pos=(6.32,2.43) size=(0.62x0.96) text=''
+  [Ω╖╕δú╣ 73] type=GROUP (6) pos=(9.67,1.93) size=(0.62x0.96) text=''
+  [TextBox 76] type=TEXT_BOX (17) pos=(1.68,4.55) size=(1.29x0.5) text='2021'
+  [TextBox 77] type=TEXT_BOX (17) pos=(7.17,5.51) size=(1.29x0.5) text='2022'
+  [TextBox 78] type=TEXT_BOX (17) pos=(5.98,1.91) size=(1.29x0.5) text='2023'
+  [TextBox 79] type=TEXT_BOX (17) pos=(9.34,3.36) size=(1.29x0.5) text='2024'
+  [Rounded Rectangle 32] type=FREEFORM (5) pos=(6.48,4.88) size=(0.29x0.29) text=''
+  [Oval 7] type=FREEFORM (5) pos=(6.47,2.57) size=(0.33x0.33) text=''
+  [Rectangle 16] type=FREEFORM (5) pos=(9.8,2.14) size=(0.36x0.24) text=''
+  [Ω╖╕δú╣ 83] type=GROUP (6) pos=(1.41,2.68) size=(1.82x1.84) text=''
+  [Ω╖╕δú╣ 86] type=GROUP (6) pos=(8.55,4.84) size=(1.84x1.84) text=''
+  [Ω╖╕δú╣ 89] type=GROUP (6) pos=(4.23,2.01) size=(1.82x1.84) text=''
+  [Ω╖╕δú╣ 92] type=GROUP (6) pos=(10.64,3.54) size=(1.84x1.84) text=''
+  [Ω╖╕δú╣ 95] type=GROUP (6) pos=(2.01,5.07) size=(0.62x0.96) text=''
+  [Rectangle 9] type=FREEFORM (5) pos=(2.17,5.24) size=(0.3x0.28) text=''
+
+============================================================
+SLIDE 5 | layout: 'Contents slide layout' | shapes: 9
+============================================================
+  [Text Placeholder 1] type=PLACEHOLDER (14) pos=(0.35,0.37) size=(12.66x0.79) text='Infographic Style'
+  [Ω╖╕δ₧ÿφö╜ 338] type=PICTURE (13) pos=(0.78,0.85) size=(3.22x6.45) text=''
+  [∞₧É∞£áφÿò: δÅäφÿò 339] type=FREEFORM (5) pos=(0.95,0.88) size=(2.24x2.31) text=''
+  [TextBox 19] type=TEXT_BOX (17) pos=(4.93,1.9) size=(1.44x1.11) text='80%'
+  [TextBox 20] type=TEXT_BOX (17) pos=(6.34,2.16) size=(5.73x0.71) text='You can simply impress your audience and add a unique zing a'
+  [Group 7] type=GROUP (6) pos=(4.96,4.06) size=(2.04x2.65) text=''
+  [Group 10] type=GROUP (6) pos=(7.47,4.06) size=(2.04x2.65) text=''
+  [Group 13] type=GROUP (6) pos=(9.99,4.06) size=(2.04x2.65) text=''
+  [TextBox 30] type=TEXT_BOX (17) pos=(4.96,2.82) size=(7.11x1.11) text='You can simply impress your audience and add a unique zing a'
+
+============================================================
+SLIDE 7 | layout: '5_Contents slide layout' | shapes: 8
+============================================================
+  [φàì∞èñφè╕ Ω░£∞▓┤ φïÇ 24] type=PLACEHOLDER (14) pos=(0.35,0.37) size=(12.66x0.79) text='Infographic Style'
+  [Block Arc 14] type=FREEFORM (5) pos=(6.38,1.84) size=(0.57x0.58) text=''
+  [Group 11] type=GROUP (6) pos=(0.72,2.96) size=(5.4x1.97) text=''
+  [Group 18] type=GROUP (6) pos=(0.72,5.64) size=(4.46x1.01) text=''
+  [TextBox 40] type=TEXT_BOX (17) pos=(1.5,1.23) size=(10.33x0.5) text='You can simply impress your audience and add a unique zing a'
+  [Freeform 55] type=FREEFORM (5) pos=(5.5,5.67) size=(0.39x0.96) text=''
+  [Ω╖╕δª╝ Ω░£∞▓┤ φïÇ 2] type=PLACEHOLDER (14) pos=(7.97,2.8) size=(1.59x3.29) text=''
+  [Ω╖╕δª╝ Ω░£∞▓┤ φïÇ 4] type=PLACEHOLDER (14) pos=(10.74,2.71) size=(2.58x2.99) text=''
+
+============================================================
+SLIDE 9 | layout: 'Contents slide layout' | shapes: 11
+============================================================
+  [Text Placeholder 1] type=PLACEHOLDER (14) pos=(0.35,0.37) size=(12.66x0.79) text='Infographic Style'
+  [Ω╖╕δú╣ 2] type=GROUP (6) pos=(8.09,1.46) size=(4.86x5.71) text=''
+  [TextBox 37] type=TEXT_BOX (17) pos=(0.83,1.52) size=(1.44x1.11) text='80%'
+  [TextBox 38] type=TEXT_BOX (17) pos=(2.28,1.58) size=(2.16x0.91) text='Get a modern PowerPoint  Presentation that is beautifully de'
+  [TextBox 39] type=TEXT_BOX (17) pos=(0.86,2.44) size=(3.58x4.54) text='You can simply impress your audience and add a unique zing a'
+  [TextBox 40] type=TEXT_BOX (17) pos=(4.84,1.76) size=(0.97x0.5) text='60%'
+  [Group 11] type=GROUP (6) pos=(4.84,2.22) size=(3.25x1.03) text=''
+  [TextBox 44] type=TEXT_BOX (17) pos=(4.84,3.55) size=(0.97x0.5) text='45%'
+  [Group 15] type=GROUP (6) pos=(4.84,4.01) size=(3.25x1.03) text=''
+  [TextBox 48] type=TEXT_BOX (17) pos=(4.84,5.34) size=(0.97x0.5) text='75%'
+  [Group 19] type=GROUP (6) pos=(4.84,5.8) size=(3.25x1.03) text=''
+
+============================================================
+SLIDE 10 | layout: '6_Contents slide layout' | shapes: 16
+============================================================
+  [Rectangle 4] type=AUTO_SHAPE (1) pos=(0,4.75) size=(13.33x0.74) text=''
+  [Rectangle 5] type=AUTO_SHAPE (1) pos=(0,5.61) size=(13.33x0.74) text=''
+  [Rectangle 6] type=AUTO_SHAPE (1) pos=(0,6.48) size=(13.33x0.74) text=''
+  [TextBox 12] type=TEXT_BOX (17) pos=(9.98,4.83) size=(1.93x0.57) text='$  64,090'
+  [TextBox 13] type=TEXT_BOX (17) pos=(9.98,5.66) size=(1.93x0.57) text='$124,090'
+  [TextBox 14] type=TEXT_BOX (17) pos=(9.98,6.56) size=(1.93x0.57) text='$234,090'
+  [TextBox 15] type=TEXT_BOX (17) pos=(7.28,4.86) size=(2.31x0.53) text='Easy to change colors, photos and Text.'
+  [TextBox 16] type=TEXT_BOX (17) pos=(5.04,4.86) size=(1.85x0.3) text='Your Text  Here'
+  [TextBox 17] type=TEXT_BOX (17) pos=(1.45,4.87) size=(3.21x0.5) text='LOREM IPSUM DOLOR SIT AMET,'
+  [TextBox 18] type=TEXT_BOX (17) pos=(7.28,5.72) size=(2.31x0.53) text='Easy to change colors, photos and Text.'
+  [TextBox 19] type=TEXT_BOX (17) pos=(5.04,5.72) size=(1.85x0.3) text='Your Text  Here'
+  [TextBox 20] type=TEXT_BOX (17) pos=(1.45,5.74) size=(3.21x0.5) text='LOREM IPSUM DOLOR SIT AMET,'
+  [TextBox 21] type=TEXT_BOX (17) pos=(7.28,6.59) size=(2.31x0.53) text='Easy to change colors, photos and Text.'
+  [TextBox 22] type=TEXT_BOX (17) pos=(5.04,6.59) size=(1.85x0.3) text='Your Text  Here'
+  [TextBox 23] type=TEXT_BOX (17) pos=(1.45,6.6) size=(3.21x0.5) text='LOREM IPSUM DOLOR SIT AMET,'
+  [TextBox 24] type=TEXT_BOX (17) pos=(9.15,0.66) size=(3.9x1.72) text='AWESOME'
+
+============================================================
+SLIDE 19 | layout: '7_Contents slide layout' | shapes: 7
+============================================================
+  [φàì∞èñφè╕ Ω░£∞▓┤ φïÇ 4] type=PLACEHOLDER (14) pos=(0.35,0.37) size=(12.66x0.79) text='Infographic Style'
+  [Group 7] type=GROUP (6) pos=(0.78,3.24) size=(2.63x1.21) text=''
+  [Group 10] type=GROUP (6) pos=(9.95,3.19) size=(2.63x1.21) text=''
+  [TextBox 13] type=TEXT_BOX (17) pos=(1.55,5.97) size=(10.26x0.71) text='Get a modern PowerPoint  Presentation that is beautifully de'
+  [Rectangle 16] type=FREEFORM (5) pos=(11.07,2.47) size=(0.37x0.66) text=''
+  [Rectangle 9] type=FREEFORM (5) pos=(1.9,2.58) size=(0.5x0.47) text=''
+  [Ω╖╕δª╝ Ω░£∞▓┤ φïÇ 2] type=PLACEHOLDER (14) pos=(4.2,2.1) size=(4.93x2.98) text=''
+
+============================================================
+SLIDE 28 | layout: '12_Contents slide layout' | shapes: 4
+============================================================
+  [Right Triangle 1] type=AUTO_SHAPE (1) pos=(1.56,-1.56) size=(4.59x7.72) text=''
+  [Right Triangle 4] type=AUTO_SHAPE (1) pos=(7.18,1.34) size=(4.59x7.72) text=''
+  [TextBox 5] type=TEXT_BOX (17) pos=(0.68,0.78) size=(3.18x1.68) text='We Create'
+  [TextBox 6] type=TEXT_BOX (17) pos=(9.88,4.86) size=(2.89x1.31) text='Get a modern PowerPoint  Presentation that is beautifully de'
+
+============================================================
+SLIDE 34 | layout: '14_Contents slide layout' | shapes: 7
+============================================================
+  [TextBox 3] type=TEXT_BOX (17) pos=(9.53,3.14) size=(1.61x0.61) text='25%'
+  [Group 64] type=GROUP (6) pos=(9.53,3.75) size=(3.33x0.75) text=''
+  [TextBox 7] type=TEXT_BOX (17) pos=(9.53,4.44) size=(1.61x0.61) text='28%'
+  [Group 64] type=GROUP (6) pos=(9.53,5.05) size=(3.33x0.75) text=''
+  [TextBox 11] type=TEXT_BOX (17) pos=(9.53,5.74) size=(1.61x0.61) text='36%'
+  [Group 64] type=GROUP (6) pos=(9.53,6.34) size=(3.33x0.75) text=''
+  [Group 8] type=GROUP (6) pos=(8.35,0.24) size=(4.63x1.46) text=''
+
+============================================================
+SLIDE 40 | layout: '16_Contents slide layout' | shapes: 9
+============================================================
+  [TextBox 2] type=TEXT_BOX (17) pos=(0.47,5.33) size=(3.13x1.92) text='Column  Style'
+  [TextBox 18] type=TEXT_BOX (17) pos=(5.73,3.62) size=(3.18x0.47) text='LOREM IPSUM DOLOR SIT AMET,'
+  [TextBox 19] type=TEXT_BOX (17) pos=(5.73,2.79) size=(3.18x0.91) text='LOREM IPSUM'
+  [TextBox 20] type=TEXT_BOX (17) pos=(5.73,0.67) size=(5.13x0.94) text='We Create'
+  [TextBox 21] type=TEXT_BOX (17) pos=(5.73,1.75) size=(7.13x0.91) text='Get a modern PowerPoint  Presentation that is beautifully de'
+  [TextBox 22] type=TEXT_BOX (17) pos=(5.73,4.2) size=(3.18x2.93) text='You can simply impress your audience and add a unique zing a'
+  [TextBox 23] type=TEXT_BOX (17) pos=(9.39,3.62) size=(3.18x0.47) text='LOREM IPSUM DOLOR SIT AMET,'
+  [TextBox 24] type=TEXT_BOX (17) pos=(9.39,2.79) size=(3.18x0.91) text='LOREM IPSUM'
+  [TextBox 25] type=TEXT_BOX (17) pos=(9.39,4.2) size=(3.18x2.93) text='You can simply impress your audience and add a unique zing a'
+
+============================================================
+SLIDE 41 | layout: '17_Contents slide layout' | shapes: 10
+============================================================
+  [∞é¼Ω░üφÿò: δæÑΩ╖╝ δ¬¿∞ä£δª¼ 4] type=AUTO_SHAPE (1) pos=(0.17,0.17) size=(13.0x7.16) text=''
+  [TextBox 2] type=TEXT_BOX (17) pos=(0,0.17) size=(13.33x1.01) text='Columns  Style'
+  [TextBox 6] type=TEXT_BOX (17) pos=(1.72,3.02) size=(4.51x0.34) text='PowerPoint Presentation Templates'
+  [TextBox 7] type=TEXT_BOX (17) pos=(1.72,3.48) size=(4.51x3.13) text='Get a modern PowerPoint  Presentation that is beautifully de'
+  [TextBox 8] type=TEXT_BOX (17) pos=(1.72,1.93) size=(4.51x0.91) text='You can simply impress your audience and add a unique zing a'
+  [TextBox 9] type=TEXT_BOX (17) pos=(0.87,1.84) size=(0.85x0.71) text='01'
+  [TextBox 10] type=TEXT_BOX (17) pos=(7.9,3.01) size=(4.51x0.34) text='PowerPoint Presentation Templates'
+  [TextBox 11] type=TEXT_BOX (17) pos=(7.9,3.48) size=(4.51x3.13) text='Get a modern PowerPoint  Presentation that is beautifully de'
+  [TextBox 12] type=TEXT_BOX (17) pos=(7.9,1.92) size=(4.51x0.91) text='You can simply impress your audience and add a unique zing a'
+  [TextBox 13] type=TEXT_BOX (17) pos=(7.05,1.84) size=(0.85x0.71) text='02'
+
+============================================================
+SLIDE 42 | layout: 'End slide layout' | shapes: 1
+============================================================
+  [Ω╖╕δú╣ 1] type=GROUP (6) pos=(7.16,3.22) size=(6.17x1.44) text=''
