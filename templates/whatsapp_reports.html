@@ -133,6 +133,7 @@
 
 <script>
     let pollInterval = null;
+    let pollTimer = null;
 
     document.addEventListener('DOMContentLoaded', function() {
         const today = new Date();
@@ -142,31 +143,24 @@
         document.getElementById('toDate').value = today.toISOString().split('T')[0];
         document.getElementById('fromDate').value = ninetyDaysAgo.toISOString().split('T')[0];
         
-        document.getElementById('fromDate').addEventListener('change', () => fetchReport(true));
-        document.getElementById('toDate').addEventListener('change', () => fetchReport(true));
+        document.getElementById('fromDate').addEventListener('change', () => generateReport());
+        document.getElementById('toDate').addEventListener('change', () => generateReport());
         
-        // Initial fetch with loading state
-        fetchReport(true);
-        
-        // Live polling every 5 seconds without showing loading UI
-        pollInterval = setInterval(() => fetchReport(false), 5000);
+        generateReport();
     });
 
-    async function fetchReport(showLoading) {
+    async function generateReport() {
+        if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+
         const fromDate = document.getElementById('fromDate').value;
         const toDate = document.getElementById('toDate').value;
         
-        if (!fromDate || !toDate) {
-            if (showLoading) showError("Please select both From Date and To Date.");
-            return;
-        }
+        if (!fromDate || !toDate) return;
 
-        if (showLoading) {
-            document.getElementById('errorState').style.display = 'none';
-            document.getElementById('resultsSection').style.display = 'none';
-            document.getElementById('loadingState').style.display = 'block';
-            document.getElementById('loadingText').innerText = "Loading live data...";
-        }
+        document.getElementById('errorState').style.display = 'none';
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('loadingText').innerText = 'Requesting report from Telfiny...';
 
         try {
             const reqRes = await fetch('/api/whatsapp/request-report', {
@@ -175,23 +169,46 @@
                 body: JSON.stringify({ fromDate, toDate })
             });
             const reqData = await reqRes.json();
-            
+
             if (!reqRes.ok || !reqData.success) {
-                throw new Error(reqData.message || "Failed to fetch live data from database.");
+                throw new Error(reqData.message || 'Failed to request report.');
             }
 
-            // Since it's from our DB, the data is instantly available in reqData.data
-            displayResults(reqData.data);
+            const fileId = reqData.fileID;
+            document.getElementById('loadingText').innerText = 'Processing report... please wait';
+            pollForReport(fileId, 0);
 
         } catch (error) {
-            if (showLoading) showError(error.message);
+            showError(error.message);
+        }
+    }
+
+    async function pollForReport(fileId, attempts) {
+        if (attempts > 30) {
+            showError('Report is taking too long. Please try again.');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/whatsapp/poll-report/${fileId}`);
+            const data = await res.json();
+
+            if (data.status === 'pending') {
+                document.getElementById('loadingText').innerText = `Processing report... (${attempts + 1}s)`;
+                pollTimer = setTimeout(() => pollForReport(fileId, attempts + 1), 2000);
+            } else if (data.status === 'completed') {
+                displayResults(data.data);
+            } else {
+                showError(data.message || 'Failed to fetch report file.');
+            }
+        } catch (error) {
+            showError(error.message);
         }
     }
 
     function displayResults(data) {
         document.getElementById('loadingState').style.display = 'none';
         
-        // Animate count change
         document.getElementById('statSent').innerText = data.sent || 0;
         document.getElementById('statDelivered').innerText = data.delivered || 0;
         document.getElementById('statRead').innerText = data.read || 0;
@@ -230,4 +247,5 @@
         document.getElementById('errorState').style.display = 'flex';
     }
 </script>
+
 {% endblock %}
