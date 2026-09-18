@@ -1620,6 +1620,36 @@ def update_claim(id):
                     if not resp.get("blocked") and resp.get("status_code") in [200, 201, 202]:
                         payload["Last_Notified_Status"] = new_status_raw
                         payload["Last_Notified_At"]     = datetime.datetime.utcnow().isoformat()
+                        # Log 'sent' row to whatsapp_message_logs using message_id from API response
+                        try:
+                            wa_resp_body = resp.get('response', {})
+                            wa_msg_id = None
+                            # Telfiny returns message id in various keys
+                            if isinstance(wa_resp_body, dict):
+                                wa_msg_id = (wa_resp_body.get('messageId')
+                                             or wa_resp_body.get('message_id')
+                                             or wa_resp_body.get('id'))
+                                # Also handle nested: { "messages": [{"id": "..."}] }
+                                if not wa_msg_id:
+                                    msgs = wa_resp_body.get('messages', [])
+                                    if msgs and isinstance(msgs, list):
+                                        wa_msg_id = msgs[0].get('id')
+                            if not wa_msg_id:
+                                import uuid
+                                wa_msg_id = f"sent_{uuid.uuid4()}"
+                            mobile_e164 = f"91{mobile}" if len(mobile) == 10 else mobile
+                            wa_conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
+                            with wa_conn.cursor() as wa_cur:
+                                wa_cur.execute("""
+                                    INSERT INTO whatsapp_message_logs (message_id, mobile_number, status, failure_reason)
+                                    VALUES (%s, %s, 'sent', '')
+                                    ON CONFLICT (message_id) DO NOTHING
+                                """, (str(wa_msg_id), mobile_e164))
+                            wa_conn.commit()
+                            wa_conn.close()
+                            logging.info(f"[WA_LOG] Logged sent for {id} | msg_id={wa_msg_id} | mobile={mobile_e164}")
+                        except Exception as log_err:
+                            logging.warning(f"[WA_LOG] Failed to log sent row: {log_err}")
             except Exception as wa_err:
                 logging.error(f"[WA_ERROR] {id} — WhatsApp notification failed: {wa_err}", exc_info=True)
         else:
@@ -3860,27 +3890,52 @@ def telfiny_webhook():
     data = request.json
     if not data:
         return jsonify({'success': False}), 400
-    
-    msg_id = data.get('messageId')
-    mobile = data.get('mobileNumber') or data.get('mobile')
-    status = data.get('status', '').lower()
-    reason = data.get('errorDescription') or data.get('reason') or ''
-    
-    if msg_id and mobile:
+
+    # Parse Telfiny DLR format:
+    # { "object": "whatsapp_business_account", "entry": [{ "changes": [{ "value": { "statuses": [{"id": ..., "status": ..., "recipient_id": ...}] } }] }] }
+    records = []
+    try:
+        for entry in data.get('entry', []):
+            for change in entry.get('changes', []):
+                value = change.get('value', {})
+                for st in value.get('statuses', []):
+                    msg_id = str(st.get('id', ''))
+                    mobile = str(st.get('recipient_id', ''))
+                    status = st.get('status', '').lower()
+                    # Extract failure reason from errors array if present
+                    errors = st.get('errors', [])
+                    reason = errors[0].get('message', '') if errors else ''
+                    if msg_id and mobile:
+                        records.append((msg_id, mobile, status, reason))
+    except Exception as parse_err:
+        logging.error(f'Webhook parse error: {parse_err}')
+
+    # Fallback: legacy flat format (messageId / mobileNumber)
+    if not records:
+        msg_id = data.get('messageId')
+        mobile = data.get('mobileNumber') or data.get('mobile')
+        status = data.get('status', '').lower()
+        reason = data.get('errorDescription') or data.get('reason') or ''
+        if msg_id and mobile:
+            records.append((msg_id, mobile, status, reason))
+
+    if records:
         try:
             conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
             with conn.cursor() as cur:
-                cur.execute("""
-                    INSERT INTO whatsapp_message_logs (message_id, mobile_number, status, failure_reason)
-                    VALUES (%s, %s, %s, %s)
-                    ON CONFLICT (message_id) 
-                    DO UPDATE SET status = EXCLUDED.status, failure_reason = EXCLUDED.failure_reason, updated_at = CURRENT_TIMESTAMP
-                """, (msg_id, mobile, status, reason))
+                for (msg_id, mobile, status, reason) in records:
+                    cur.execute("""
+                        INSERT INTO whatsapp_message_logs (message_id, mobile_number, status, failure_reason)
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (message_id)
+                        DO UPDATE SET status = EXCLUDED.status, failure_reason = EXCLUDED.failure_reason, updated_at = CURRENT_TIMESTAMP
+                    """, (msg_id, mobile, status, reason))
+                    logging.info(f'[WEBHOOK_DLR] id={msg_id} mobile={mobile} status={status}')
             conn.commit()
             conn.close()
         except Exception as e:
             logging.error(f'Webhook DB Error: {e}')
-            
+
     return jsonify({'success': True}), 200
 
 @app.route('/api/whatsapp/request-report', methods=['POST'])
