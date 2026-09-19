@@ -1473,7 +1473,9 @@ def get_claim(id):
         "tat": found.tat,
         "assigned_staff": found.assigned_staff or "",
         "sr_no": found.sr_no or "",
-        "osid": osid
+        "osid": osid,
+        "onsitego_status": found.onsitego_status or "",
+        "submitted_date": found.created_at.strftime('%Y-%m-%d') if found.created_at else ""
     })
 
 @app.route('/update-claim/<string:id>', methods=['POST'])

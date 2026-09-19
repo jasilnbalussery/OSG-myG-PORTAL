@@ -87,6 +87,32 @@ function toggleFollowUpHistory() {
     if (el) el.classList.toggle('hidden');
 }
 
+// For claims registered after Sep 17 2026, include Remarks and Onsitego Status in history display
+const FOLLOWUP_CUTOFF_DATE = new Date('2026-09-17');
+
+function buildFollowUpDisplay(data) {
+    const submittedDate = data.submitted_date || data.date || '';
+    const claimDate = submittedDate ? new Date(submittedDate) : null;
+    const isAfterCutoff = claimDate && claimDate >= FOLLOWUP_CUTOFF_DATE;
+
+    let display = data.follow_up_notes || '';
+
+    if (isAfterCutoff) {
+        const extras = [];
+        if (data.remarks && data.remarks.trim()) {
+            extras.push(`[Remarks]: ${data.remarks.trim()}`);
+        }
+        if (data.onsitego_status && data.onsitego_status.trim()) {
+            extras.push(`[Onsitego Status]: ${data.onsitego_status.trim()}`);
+        }
+        if (extras.length > 0) {
+            display = (display ? display + '\n\n' : '') + extras.join('\n');
+        }
+    }
+
+    return display;
+}
+
 function getISTDate() {
     const d = new Date();
     // distinct handling for time if needed, but input type="date" needs YYYY-MM-DD
@@ -481,9 +507,9 @@ async function openClaimModal(id) {
         // Render Workflow List (Read Only)
         renderWorkflowList(data);
 
-        // Follow Up History (View Only)
+        // Follow Up History (View Only) — include Remarks + Onsitego Status for claims after Sep 17 2026
         const histEl = document.getElementById('followUpHistory');
-        if (histEl) histEl.value = data.follow_up_notes || '';
+        if (histEl) histEl.value = buildFollowUpDisplay(data);
 
         modal.classList.remove('hidden');
 
@@ -531,8 +557,8 @@ async function openClaimEditModal(id) {
         // Status Dropdown
         setVal('updateStatus', data.status);
 
-        // Follow Up
-        setVal('followUpHistory', data.follow_up_notes || '');
+        // Follow Up — include Remarks + Onsitego Status for claims after Sep 17 2026
+        setVal('followUpHistory', buildFollowUpDisplay(data));
         setVal('followUpDate', data.next_follow_up_date);
         setVal('assignedStaff', data.assigned_staff);
         setVal('settledDate', data.claim_settled_date);
