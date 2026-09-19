@@ -1915,7 +1915,8 @@ def notify_spare_parts(id):
                 
             return jsonify({'success': True, 'message': 'Notification sent successfully!'})
         else:
-            return jsonify({'success': False, 'message': resp.get("error", "Failed to send notification")})
+            err_msg = resp.get("error") or f"API returned status {resp.get('status_code', 'unknown')}"
+            return jsonify({'success': False, 'message': err_msg})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
 
@@ -3948,91 +3949,135 @@ def request_whatsapp_report():
     if not from_date or not to_date:
         return jsonify({'success': False, 'message': 'Missing dates'}), 400
 
+    api_key = os.environ.get('TELFINY_API_KEY')
+    if not api_key:
+        return jsonify({'success': False, 'message': 'Telfiny API key not configured'}), 500
+
     try:
-        conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("""
-                SELECT status, COUNT(*) as count 
-                FROM whatsapp_message_logs 
-                WHERE created_at::date >= %s AND created_at::date <= %s
-                GROUP BY status
-            """, (from_date, to_date))
-            
-            stats_rows = cur.fetchall()
-            stats = {row['status']: row['count'] for row in stats_rows}
-            
-            cur.execute("""
-                SELECT mobile_number as mobile, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as date, failure_reason as reason 
-                FROM whatsapp_message_logs 
-                WHERE created_at::date >= %s AND created_at::date <= %s AND status IN ('failed', 'error')
-                ORDER BY created_at DESC
-                LIMIT 100
-            """, (from_date, to_date))
-            failed_messages = cur.fetchall()
-            
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'fileID': f'local_{from_date}_{to_date}',
-            'status': 'completed',
-            'data': {
-                'sent': sum(stats.values()), # Total of all statuses = total messages triggered
-                'delivered': stats.get('delivered', 0) + stats.get('read', 0),
-                'read': stats.get('read', 0),
-                'failed': stats.get('failed', 0) + stats.get('error', 0),
-                'failed_messages': failed_messages
-            }
-        }), 200
+        headers = {'x-api-key': api_key, 'Content-Type': 'application/json'}
+
+        # Try the two-step download flow: POST request-download → get fileID
+        telfiny_url = 'https://hub.telinfy.com/unified/developer/api/v1/whatsapp/reports/request-download'
+        # Telfiny expects startDate/endDate (not fromDate/toDate)
+        resp = requests.post(telfiny_url, json={'startDate': from_date, 'endDate': to_date}, headers=headers, timeout=15)
+        logging.info(f'[WA_REPORT] request-download status={resp.status_code} body={resp.text[:500]}')
+
+        if resp.ok:
+            resp_json = resp.json()
+            file_id = (resp_json.get('fileID') or resp_json.get('file_id')
+                       or resp_json.get('id') or resp_json.get('downloadId')
+                       or resp_json.get('requestId'))
+            if file_id:
+                return jsonify({'success': True, 'fileID': str(file_id), 'status': 'pending'}), 200
+
+        # Fallback: single-call GET endpoint
+        get_url = 'https://hub.telinfy.com/unified/developer/api/v1/whatsapp/reports'
+        get_resp = requests.get(get_url,
+                                params={'startDate': from_date, 'endDate': to_date},
+                                headers={'x-api-key': api_key}, timeout=15)
+        logging.info(f'[WA_REPORT] GET reports status={get_resp.status_code} body={get_resp.text[:500]}')
+
+        if get_resp.ok:
+            return jsonify({'success': True, 'fileID': f'direct_{from_date}_{to_date}',
+                            'status': 'pending', '_direct_data': get_resp.text[:5000]}), 200
+
+        return jsonify({'success': False,
+                        'message': f'Telfiny error — request-download: {resp.status_code} {resp.text[:150]} | GET: {get_resp.status_code} {get_resp.text[:150]}'}), 502
+
     except Exception as e:
-        logging.error(f'Error querying DB for report: {e}')
+        logging.error(f'[WA_REPORT] request-download error: {e}')
         return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/whatsapp/poll-report/<file_id>', methods=['GET'])
 @login_required
 def poll_whatsapp_report(file_id):
-    if file_id.startswith('local_'):
-        parts = file_id.split('_')
-        from_date = parts[1]
-        to_date = parts[2]
-        
+    api_key = os.environ.get('TELFINY_API_KEY')
+    if not api_key:
+        return jsonify({'status': 'error', 'message': 'Telfiny API key not configured'}), 500
+
+    try:
+        # Correct endpoint: GET .../reports/download-file?fileID=12345
+        telfiny_url = 'https://hub.telinfy.com/unified/developer/api/v1/whatsapp/reports/download-file'
+        headers = {'x-api-key': api_key}
+        resp = requests.get(telfiny_url, params={'fileID': file_id}, headers=headers, timeout=20)
+
+        logging.info(f'[WA_REPORT] download-file fileID={file_id} status={resp.status_code} ct={resp.headers.get("Content-Type","")}')
+
+        # Still processing
+        if resp.status_code == 202:
+            return jsonify({'status': 'pending'}), 200
+        if resp.ok:
+            try:
+                j = resp.json()
+                # Telfiny returns {success, status, message} when still processing
+                if str(j.get('status','')).lower() in ('processing', 'pending') or not j.get('success', True) is False and 'processing' in str(j.get('message','')).lower():
+                    return jsonify({'status': 'pending'}), 200
+            except Exception:
+                pass  # Not JSON — likely the actual file
+
+        if not resp.ok:
+            return jsonify({'status': 'error', 'message': f'Telfiny error {resp.status_code}: {resp.text[:200]}'}), 502
+
+        content_type = resp.headers.get('Content-Type', '')
+        text = resp.text.strip()
+
+        # ── Parse CSV ──────────────────────────────────────────────────────────
+        if 'csv' in content_type or 'text/plain' in content_type or (',' in text[:200] and '\n' in text):
+            reader = csv.DictReader(io.StringIO(text))
+            rows = list(reader)
+            stats = {'sent': 0, 'delivered': 0, 'read': 0, 'failed': 0}
+            failed_messages = []
+            for row in rows:
+                r = {k.lower().strip().replace(' ', '_'): str(v).lower().strip() for k, v in row.items()}
+                status = r.get('status') or r.get('dlr_status') or r.get('delivery_status') or ''
+                if status in ('sent', 'submitted', 'accepted', 'queued'):
+                    stats['sent'] += 1
+                elif status == 'delivered':
+                    stats['sent'] += 1
+                    stats['delivered'] += 1
+                elif status == 'read':
+                    stats['sent'] += 1
+                    stats['delivered'] += 1
+                    stats['read'] += 1
+                elif status in ('failed', 'error', 'undelivered', 'rejected', 'expired'):
+                    stats['sent'] += 1
+                    stats['failed'] += 1
+                    mobile = r.get('mobile') or r.get('phone') or r.get('to') or r.get('recipient') or r.get('phonenumber') or ''
+                    date   = r.get('date') or r.get('timestamp') or r.get('created_at') or r.get('sent_at') or ''
+                    reason = r.get('failure_reason') or r.get('error') or r.get('error_message') or r.get('reason') or 'Unknown'
+                    failed_messages.append({'mobile': mobile, 'date': date, 'reason': reason})
+            return jsonify({'status': 'completed', 'data': {**stats, 'failed_messages': failed_messages}}), 200
+
+        # ── Parse JSON ─────────────────────────────────────────────────────────
         try:
-            conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute("""
-                    SELECT status, COUNT(*) as count 
-                    FROM whatsapp_message_logs 
-                    WHERE created_at::date >= %s AND created_at::date <= %s
-                    GROUP BY status
-                """, (from_date, to_date))
-                
-                stats_rows = cur.fetchall()
-                stats = {row['status']: row['count'] for row in stats_rows}
-                
-                cur.execute("""
-                    SELECT mobile_number as mobile, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI') as date, failure_reason as reason 
-                    FROM whatsapp_message_logs 
-                    WHERE created_at::date >= %s AND created_at::date <= %s AND status IN ('failed', 'error')
-                    ORDER BY created_at DESC
-                    LIMIT 100
-                """, (from_date, to_date))
-                failed_messages = cur.fetchall()
-                
-            conn.close()
-            
-            return jsonify({
-                'status': 'completed',
-                'data': {
-                    'sent': stats.get('sent', 0) + stats.get('submitted', 0),
-                    'delivered': stats.get('delivered', 0),
-                    'read': stats.get('read', 0),
-                    'failed': stats.get('failed', 0) + stats.get('error', 0),
-                    'failed_messages': failed_messages
-                }
-            }), 200
-        except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 500
-    return jsonify({'success': False, 'message': 'Invalid file ID'}), 400
+            j = resp.json()
+            if isinstance(j, list):
+                stats = {'sent': 0, 'delivered': 0, 'read': 0, 'failed': 0}
+                failed_messages = []
+                for row in j:
+                    s = str(row.get('status', '')).lower()
+                    if s in ('sent', 'submitted'):
+                        stats['sent'] += 1
+                    elif s == 'delivered':
+                        stats['sent'] += 1; stats['delivered'] += 1
+                    elif s == 'read':
+                        stats['sent'] += 1; stats['delivered'] += 1; stats['read'] += 1
+                    elif s in ('failed', 'error', 'undelivered'):
+                        stats['sent'] += 1; stats['failed'] += 1
+                        failed_messages.append({'mobile': row.get('to', ''), 'date': row.get('timestamp', ''), 'reason': row.get('error', 'Unknown')})
+                return jsonify({'status': 'completed', 'data': {**stats, 'failed_messages': failed_messages}}), 200
+            if isinstance(j, dict):
+                stats = {'sent': j.get('sent', 0), 'delivered': j.get('delivered', 0), 'read': j.get('read', 0), 'failed': j.get('failed', 0)}
+                return jsonify({'status': 'completed', 'data': {**stats, 'failed_messages': j.get('failed_messages', [])}}), 200
+        except Exception:
+            pass
+
+        logging.warning(f'[WA_REPORT] Unknown response: {text[:300]}')
+        return jsonify({'status': 'error', 'message': f'Unexpected Telfiny response: {text[:200]}'}), 502
+
+    except Exception as e:
+        logging.error(f'[WA_REPORT] poll error: {e}')
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 3000))

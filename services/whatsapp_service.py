@@ -216,10 +216,24 @@ def send_whatsapp_message(mobile: str, template_name: str, params: list) -> dict
             json_response = {"text_response": response.text}
             logger.info(f"[WHATSAPP] Response body (non-JSON): {response.text}")
 
-        return {
+        result = {
             "status_code": response.status_code,
             "response": json_response
         }
+
+        # Surface the actual API error message when status is not 2xx
+        if response.status_code not in [200, 201, 202]:
+            api_err = (
+                json_response.get("message")
+                or json_response.get("error")
+                or json_response.get("detail")
+                or json_response.get("text_response")
+                or f"HTTP {response.status_code}"
+            )
+            result["error"] = f"[{response.status_code}] {api_err}"
+            logger.warning(f"[WHATSAPP] API error: {result['error']}")
+
+        return result
 
     except Exception as e:
         logger.error(f"[WHATSAPP] Service error: {e}")
