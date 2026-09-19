@@ -1500,6 +1500,10 @@ def update_claim(id):
                 data[date_field] = validate_date_str(data[date_field], field_name=date_field)
         for text_field in ('follow_up_notes', 'remarks'):
             if text_field in data:
+                # Trim oversized notes history: keep only last 200 lines if too large
+                if text_field == 'follow_up_notes' and len(str(data[text_field])) > 40000:
+                    lines = str(data[text_field]).splitlines()
+                    data[text_field] = "\n".join(lines[-200:])
                 data[text_field] = sanitize_text(data[text_field], max_len=MAX_TEXT_LONG,
                                                   field_name=text_field, allow_newlines=True,
                                                   sheet_destined=True)
@@ -1902,6 +1906,10 @@ def notify_spare_parts(id):
             note = f"[{timestamp}] Sent 'Spare Parts Pending' WhatsApp notification to customer."
             
             old_history = existing_claim.follow_up_notes or ""
+            # Safety trim: if notes are very large, keep only the most recent 200 lines
+            if len(old_history) > 40000:
+                lines = old_history.splitlines()
+                old_history = "\n".join(lines[-200:])
             new_history = f"{old_history}\n{note}" if str(old_history).strip() else note
             
             payload = {
