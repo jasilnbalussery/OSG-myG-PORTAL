@@ -732,7 +732,9 @@ def dashboard():
             report_stats['rejected'] += 1
             report_stats['grand_total_status'] += 1
         elif c.complete or status in ["repair completed", "closed", "no issue/oncall resolution",
-                                       "no issue", "oncall resolution", "cancelled"]:
+                                       "no issue", "oncall resolution", "cancelled"] or is_replacement_claim:
+            # Replacement claims are tracked in the REPLACEMENT section (right side);
+            # count them as Completed here so they don't inflate the PENDING buckets.
             report_stats['completed'] += 1
             report_stats['grand_total_status'] += 1
         else:
@@ -861,7 +863,9 @@ def download_report():
             report_stats['rejected'] += 1
             report_stats['grand_total_status'] += 1
         elif c.complete or status in ["repair completed", "closed", "no issue/oncall resolution",
-                                       "no issue", "oncall resolution", "cancelled"]:
+                                       "no issue", "oncall resolution", "cancelled"] or is_replacement_claim:
+            # Replacement claims are tracked in the REPLACEMENT section (right side);
+            # count them as Completed here so they don't inflate the PENDING buckets.
             report_stats['completed'] += 1
             report_stats['grand_total_status'] += 1
         else:
