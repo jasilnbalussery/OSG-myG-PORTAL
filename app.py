@@ -60,7 +60,7 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
 # Email Config
 TARGET_EMAIL = "srteam@onsite.co.in"
-CC_EMAILS = ["shine.at@onsite.co.in", "akhilmp@myg.in","sachin.kadam@onsite.co.in","akhil.chandran@onsite.co.in","shyla.mariadhasan@onsite.co.in","jasil@myg.in","aniketh@myg.in"]
+CC_EMAILS = ["shine.at@onsite.co.in", "akhilmp@myg.in","sachin.kadam@onsite.co.in","akhil.chandran@onsite.co.in","shyla.mariadhasan@onsite.co.in","jasil@myg.in","aniketh@myg.in","saravana.9@digicare.com","ganesh.j@onsite.co.in"]
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "sarath.k@myg.in"
