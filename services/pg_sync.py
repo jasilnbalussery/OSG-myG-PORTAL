@@ -285,13 +285,22 @@ def upsert_claim_to_postgres(claim_data: dict, source: str = "sheet") -> dict:
             
             ts = datetime.datetime.now().strftime('%d/%m/%Y, %I:%M:%S %p').lower()
             
+            old_db_status = str(existing_dict.get("status") or "").strip() if not is_new_claim else ""
+            
+            # Do not append new history if the claim is already in a terminal/completed state
+            TERMINAL_STATUSES = {
+                "repair completed", "replacement approved", "replacement closed",
+                "rejected", "closed", "settled", "cancelled", "no issue/oncall resolution",
+            }
+            
             appended = False
-            if remarks_val and remarks_val.lower() != old_remarks.lower():
-                notes_val += f"\n[{ts}] [REMARK]: {remarks_val}"
-                appended = True
-            if onsitego_val and onsitego_val.lower() != old_onsitego.lower() and onsitego_val.lower() not in notes_val.lower():
-                notes_val += f"\n[{ts}] [ONSITEGO STATUS]: {onsitego_val}"
-                appended = True
+            if old_db_status.lower() not in TERMINAL_STATUSES:
+                if remarks_val and remarks_val.lower() != old_remarks.lower():
+                    notes_val += f"\n[{ts}] [REMARK]: {remarks_val}"
+                    appended = True
+                if onsitego_val and onsitego_val.lower() != old_onsitego.lower() and onsitego_val.lower() not in notes_val.lower():
+                    notes_val += f"\n[{ts}] [ONSITEGO STATUS]: {onsitego_val}"
+                    appended = True
                 
             claim_data["Follow Up - Notes"] = notes_val.strip()
             
