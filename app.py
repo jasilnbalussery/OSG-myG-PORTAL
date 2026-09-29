@@ -422,9 +422,15 @@ class ClaimWrapper:
     def remarks(self): return self.data.get("Remarks") or self.data.get("remarks")
     @property
     def onsitego_status(self):
-        # Check sheet header key first, then DB column name
+        # 1. Prefer the actual new DB column first
+        val = self.data.get("onsitego_status")
+        if val and str(val).strip().lower() not in ('nan', 'none', 'nat', ''):
+            return str(val).strip()
+
+        # 2. Fallback check (ignoring legacy triple-underscore columns)
         for k, v in self.data.items():
-            if "onsitego" in str(k).lower() and "status" in str(k).lower():
+            k_lower = str(k).lower()
+            if "onsitego" in k_lower and "status" in k_lower and "___" not in k_lower:
                 val = str(v).strip()
                 if val.lower() not in ('nan', 'none', 'nat', ''):
                     return val

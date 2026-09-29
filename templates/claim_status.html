@@ -488,7 +488,8 @@
 
     function formatFollowUpHistory(notes) {
         if (!notes) return '';
-        const entries = notes.split(/(?=\[)/).filter(e => e.trim());
+        // Only split before a date bracket like [21/07/2026
+        const entries = notes.split(/(?=\[\d{1,2}\/\d{1,2}\/\d{2,4})/).filter(e => e.trim());
         return entries.map(e => {
             return '<div style="margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px;">' + 
                    e.split('\n').map(line => line.trim()).filter(l => l).join('<br>') + 
