@@ -3336,7 +3336,7 @@ def export_claims_excel():
 
         # Header row
         headers = [
-            "SR No", "Claim ID", "OSID", "Submitted Date", "Customer Name", "Mobile",
+            "SR No", "Claim ID", "OSID", "Submitted Date", "Settled Date", "Customer Name", "Mobile",
             "Branch", "Product", "Issue", "Status",
             "Replacement Progress %", "Complete", "Aging Days"
         ]
@@ -3382,11 +3382,20 @@ def export_claims_excel():
             else:
                 aging_days = '-'
 
+            settled_str = ''
+            if claim.claim_settled_date:
+                try:
+                    dt = datetime.datetime.strptime(str(claim.claim_settled_date).split()[0], '%Y-%m-%d')
+                    settled_str = dt.strftime('%d %b %Y')
+                except:
+                    settled_str = str(claim.claim_settled_date)
+
             row_data = [
                 str(claim.sr_no or ''),
                 str(claim.claim_id or ''),
                 str(claim.osid or ''),
                 str(claim.created_at.strftime('%d %b %Y') if claim.created_at else ''),
+                settled_str,
                 str(claim.customer_name or ''),
                 str(claim.mobile_no or ''),
                 str(claim.branch or '-'),
@@ -3418,7 +3427,7 @@ def export_claims_excel():
                     aging_cell.fill = pending_fill
 
         # Auto-size columns
-        col_widths = [14, 16, 22, 16, 22, 14, 18, 30, 40, 22, 22, 10, 14]
+        col_widths = [14, 16, 22, 16, 16, 22, 14, 18, 30, 40, 22, 22, 10, 14]
         for col_idx, width in enumerate(col_widths, 1):
             ws.column_dimensions[get_column_letter(col_idx)].width = width
 
