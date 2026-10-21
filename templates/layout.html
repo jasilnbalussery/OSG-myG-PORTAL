@@ -56,6 +56,8 @@
                     class="nav-item {% if request.endpoint == 'whatsapp_reports' %}active{% endif %}">
                     <i class="ri-whatsapp-line"></i> WA Reports
                 </a>
+                {% endif %}
+                {% if session.get('role') in ['admin', 'customercare'] %}
                 <a href="{{ url_for('submit_claim') }}"
                     class="nav-item {% if request.endpoint == 'submit_claim' %}active{% endif %}">
                     <i class="ri-add-circle-line"></i> New Claim

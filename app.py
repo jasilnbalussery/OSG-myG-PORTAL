@@ -191,6 +191,21 @@ def customercare_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def admin_or_customercare_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_logged_in' not in session:
+            if request.is_json or request.path.startswith('/api') or request.path == '/lookup-customer':
+                return jsonify({'success': False, 'message': 'Session expired. Please log in again.'}), 401
+            return redirect(url_for('login', next=request.url))
+        if session.get('role') not in ('admin', 'customercare'):
+            if request.is_json or request.path.startswith('/api') or request.path == '/lookup-customer':
+                return jsonify({'success': False, 'message': 'Access denied.'}), 403
+            flash('Access denied.', 'error')
+            return redirect(url_for('claim_status'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
@@ -1200,10 +1215,14 @@ def backup_claim_to_csv(claim_dict):
 # ----------------------
 
 @app.route('/submit-claim', methods=['GET', 'POST'])
-@admin_required
+@admin_or_customercare_required
 def submit_claim():
     if request.method == 'GET':
         return render_template('submit.html')
+
+    # Only admins may actually submit claims; customer care is view/lookup only
+    if session.get('role') != 'admin':
+        return jsonify({"success": False, "message": "Admin access required to submit claims."}), 403
     
     # Handle POST
     try:
