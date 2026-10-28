@@ -1,251 +1,879 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<div class="reports-container fade-in" style="padding: 2rem; max-width: 1400px; margin: 0 auto;">
-    <!-- Page Header -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+<div class="reports-container fade-in" style="padding: 1.75rem 2rem; max-width: 1440px; margin: 0 auto;">
+    
+    <!-- Top Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.75rem;">
         <div>
-            <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.25rem;">
-                <i class="ri-whatsapp-line" style="color: #25D366; margin-right: 8px;"></i>WhatsApp Reports
-            </h1>
-            <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">Analyze message delivery and failure metrics.</p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.35rem;">
+                <div style="background: linear-gradient(135deg, rgba(37, 211, 102, 0.15), rgba(16, 185, 129, 0.25)); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(37, 211, 102, 0.3);">
+                    <i class="ri-whatsapp-fill" style="color: #25D366; font-size: 1.65rem;"></i>
+                </div>
+                <div>
+                    <h1 style="font-size: 1.75rem; font-weight: 700; color: var(--text-main); margin: 0; line-height: 1.2;">
+                        WhatsApp Reports
+                    </h1>
+                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
+                        Delivery metrics, read engagement, and failure diagnostics from WhatsApp API.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Active Report & Action Buttons -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <!-- Active Report Info Pill -->
+            <div class="glass-panel" style="padding: 0.5rem 0.9rem; display: flex; align-items: center; gap: 0.6rem; border-radius: 10px; font-size: 0.85rem;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);"></span>
+                <span style="color: var(--text-secondary); font-weight: 500;">Report:</span>
+                <strong id="activeReportName" style="color: var(--text-main); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Loading...</strong>
+                <span id="activeReportBadge" style="background: rgba(99, 102, 241, 0.12); color: #6366f1; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">--</span>
+            </div>
+
+            <!-- Report Switcher Dropdown (if multiple) -->
+            <select id="reportFileSelect" onchange="onReportFileChange()" style="display: none; padding: 0.55rem 0.9rem; border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-card, #fff); color: var(--text-main); font-size: 0.85rem; font-weight: 500; cursor: pointer;">
+            </select>
+
+            <!-- Upload New CSV Button -->
+            <label for="csvFileInput" style="background: #f8fafc; border: 1px solid var(--border-light); color: var(--text-main); padding: 0.55rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s ease;">
+                <i class="ri-upload-cloud-2-line" style="color: #6366f1; font-size: 1rem;"></i>
+                <span>Upload CSV</span>
+                <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleFileUpload(event)">
+            </label>
+
+            <!-- Export Failed CSV -->
+            <button type="button" onclick="exportFailedMessages()" id="exportBtn" style="background: #1e293b; color: #fff; border: none; padding: 0.55rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s ease;">
+                <i class="ri-download-2-line" style="color: #38bdf8;"></i>
+                <span>Export Failures</span>
+            </button>
         </div>
     </div>
 
-    <!-- Controls Section -->
-    <div class="glass-panel" style="padding: 1.5rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-end;">
-        <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.5rem;">
-            <label for="fromDate" style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;"><i class="ri-calendar-event-line"></i> From Date</label>
-            <input type="date" class="filter-input" id="fromDate" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: 8px; font-family: inherit;">
-        </div>
-        <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 0.5rem;">
-            <label for="toDate" style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600;"><i class="ri-calendar-event-line"></i> To Date</label>
-            <input type="date" class="filter-input" id="toDate" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: 8px; font-family: inherit;">
-        </div>
-        <div style="flex: 0.5; min-width: 150px; display: none;">
-            <button type="button" class="btn-primary" id="generateReportBtn" onclick="generateReport()" style="width: 100%; padding: 0.75rem 1.5rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; cursor: pointer; font-weight: 600;">
-                <i class="ri-flashlight-line"></i> Generate Report
-            </button>
+    <!-- Filter Bar Section -->
+    <div class="glass-panel" style="padding: 1.25rem 1.5rem; margin-bottom: 1.75rem; border-radius: 14px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-end;">
+            
+            <!-- Quick Date Presets -->
+            <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <label style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Quick Filter</label>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                    <button type="button" class="preset-btn active" onclick="applyPreset('all')" id="btnPresetAll">All Time</button>
+                    <button type="button" class="preset-btn" onclick="applyPreset(90)" id="btnPreset90">90 Days</button>
+                    <button type="button" class="preset-btn" onclick="applyPreset(30)" id="btnPreset30">30 Days</button>
+                    <button type="button" class="preset-btn" onclick="applyPreset(7)" id="btnPreset7">7 Days</button>
+                </div>
+            </div>
+
+            <!-- From Date -->
+            <div style="flex: 1; min-width: 170px; display: flex; flex-direction: column; gap: 0.4rem;">
+                <label for="fromDate" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="ri-calendar-line" style="color: #6366f1;"></i> From Date
+                </label>
+                <input type="date" class="filter-input" id="fromDate" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-light); border-radius: 8px; font-family: inherit; font-size: 0.9rem; background: var(--bg-card, #fff); color: var(--text-main);">
+            </div>
+
+            <!-- To Date -->
+            <div style="flex: 1; min-width: 170px; display: flex; flex-direction: column; gap: 0.4rem;">
+                <label for="toDate" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="ri-calendar-check-line" style="color: #6366f1;"></i> To Date
+                </label>
+                <input type="date" class="filter-input" id="toDate" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-light); border-radius: 8px; font-family: inherit; font-size: 0.9rem; background: var(--bg-card, #fff); color: var(--text-main);">
+            </div>
+
+            <!-- Template Filter -->
+            <div style="flex: 1.2; min-width: 200px; display: flex; flex-direction: column; gap: 0.4rem;">
+                <label for="templateFilter" style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="ri-message-3-line" style="color: #6366f1;"></i> Template
+                </label>
+                <select id="templateFilter" onchange="generateReport()" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border-light); border-radius: 8px; font-family: inherit; font-size: 0.9rem; background: var(--bg-card, #fff); color: var(--text-main); cursor: pointer;">
+                    <option value="all">All Templates</option>
+                    <option value="myg_onsitego_registered_main">Claim Registered</option>
+                    <option value="myg_onsitego_replacement_main">Replacement Approved</option>
+                    <option value="myg_onsitego_repair_completed_main">Repair Completed</option>
+                    <option value="myg_onsitego_part_order_main">Part Ordered</option>
+                </select>
+            </div>
+
+            <!-- Action: Refresh Button -->
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="button" class="btn-primary" id="generateReportBtn" onclick="generateReport()" style="padding: 0.65rem 1.25rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 0.45rem; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                    <i class="ri-refresh-line" id="refreshIcon"></i>
+                    <span>Apply Filter</span>
+                </button>
+            </div>
+
         </div>
     </div>
 
     <!-- Loading State -->
     <div id="loadingState" style="text-align: center; padding: 4rem 2rem; display: none;">
         <div class="spinner"></div>
-        <h4 style="color: var(--text-main); margin-bottom: 0.5rem;" id="loadingText">Requesting download...</h4>
-        <p style="color: var(--text-secondary);">This may take a few moments depending on the date range.</p>
+        <h4 style="color: var(--text-main); margin-bottom: 0.35rem; font-weight: 600;" id="loadingText">Processing Report...</h4>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Calculating delivery rates and aggregating failure metrics...</p>
     </div>
 
     <!-- Error State -->
-    <div id="errorState" class="fade-in" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: none; align-items: center; gap: 0.75rem; font-weight: 500;">
-        <i class="ri-error-warning-line"></i> <span id="errorText"></span>
+    <div id="errorState" class="fade-in" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); color: #ef4444; padding: 1.1rem 1.5rem; border-radius: 12px; margin-bottom: 2rem; display: none; align-items: center; gap: 0.75rem; font-weight: 500;">
+        <i class="ri-error-warning-fill" style="font-size: 1.4rem; flex-shrink: 0;"></i>
+        <div style="flex: 1;">
+            <div style="font-weight: 700; margin-bottom: 2px;">Report Error</div>
+            <div id="errorText" style="font-size: 0.9rem; color: #dc2626;"></div>
+        </div>
+        <button onclick="document.getElementById('errorState').style.display='none'" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 1.2rem;">
+            <i class="ri-close-line"></i>
+        </button>
     </div>
 
     <!-- Results Section -->
     <div id="resultsSection" class="fade-in" style="display: none;">
-        <!-- Metric Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <!-- 5 KPI Metric Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
             
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #3b82f6;">
-                <div style="font-size: 2.5rem; color: #3b82f6;"><i class="ri-send-plane-fill"></i></div>
-                <div style="text-align: right;">
-                    <h3 style="font-size: 2rem; font-weight: 700; margin: 0; color: var(--text-main);" id="statSent">0</h3>
-                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Sent</p>
+            <!-- 1. Total Sent -->
+            <div class="glass-panel kpi-card" style="padding: 1.35rem 1.5rem; border-left: 4px solid #3b82f6; position: relative; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Total Messages</div>
+                        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0; color: var(--text-main); line-height: 1.1;" id="statSent">0</h2>
+                    </div>
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(59, 130, 246, 0.12); color: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                        <i class="ri-send-plane-2-fill"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary);">
+                    Attempts in selected range
                 </div>
             </div>
-            
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #10b981;">
-                <div style="font-size: 2.5rem; color: #10b981;"><i class="ri-check-double-fill"></i></div>
-                <div style="text-align: right;">
-                    <h3 style="font-size: 2rem; font-weight: 700; margin: 0; color: var(--text-main);" id="statDelivered">0</h3>
-                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Delivered</p>
+
+            <!-- 2. Delivered -->
+            <div class="glass-panel kpi-card" style="padding: 1.35rem 1.5rem; border-left: 4px solid #10b981; position: relative; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Delivered</div>
+                        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0; color: #10b981; line-height: 1.1;" id="statDelivered">0</h2>
+                    </div>
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                        <i class="ri-checkbox-circle-fill"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Delivery Rate</span>
+                    <span id="rateDeliveredBadge" style="background: rgba(16, 185, 129, 0.15); color: #059669; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">0%</span>
+                </div>
+                <div style="margin-top: 0.4rem; width: 100%; height: 5px; background: rgba(16, 185, 129, 0.15); border-radius: 10px; overflow: hidden;">
+                    <div id="rateDeliveredBar" style="height: 100%; width: 0%; background: #10b981; border-radius: 10px; transition: width 0.6s ease;"></div>
                 </div>
             </div>
-            
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #8b5cf6;">
-                <div style="font-size: 2.5rem; color: #8b5cf6;"><i class="ri-mail-open-fill"></i></div>
-                <div style="text-align: right;">
-                    <h3 style="font-size: 2rem; font-weight: 700; margin: 0; color: var(--text-main);" id="statRead">0</h3>
-                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Read</p>
+
+            <!-- 3. Read -->
+            <div class="glass-panel kpi-card" style="padding: 1.35rem 1.5rem; border-left: 4px solid #8b5cf6; position: relative; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Read</div>
+                        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0; color: #8b5cf6; line-height: 1.1;" id="statRead">0</h2>
+                    </div>
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                        <i class="ri-mail-open-fill"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Read Rate (Delivered)</span>
+                    <span id="rateReadBadge" style="background: rgba(139, 92, 246, 0.15); color: #7c3aed; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">0%</span>
+                </div>
+                <div style="margin-top: 0.4rem; width: 100%; height: 5px; background: rgba(139, 92, 246, 0.15); border-radius: 10px; overflow: hidden;">
+                    <div id="rateReadBar" style="height: 100%; width: 0%; background: #8b5cf6; border-radius: 10px; transition: width 0.6s ease;"></div>
                 </div>
             </div>
-            
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #ef4444;">
-                <div style="font-size: 2.5rem; color: #ef4444;"><i class="ri-close-circle-fill"></i></div>
-                <div style="text-align: right;">
-                    <h3 style="font-size: 2rem; font-weight: 700; margin: 0; color: var(--text-main);" id="statFailed">0</h3>
-                    <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">Failed</p>
+
+            <!-- 4. Failed / Un Delivered -->
+            <div class="glass-panel kpi-card" style="padding: 1.35rem 1.5rem; border-left: 4px solid #ef4444; position: relative; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Failed / Undelivered</div>
+                        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0; color: #ef4444; line-height: 1.1;" id="statFailed">0</h2>
+                    </div>
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(239, 68, 68, 0.12); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                        <i class="ri-close-circle-fill"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Failure Rate</span>
+                    <span id="rateFailedBadge" style="background: rgba(239, 68, 68, 0.15); color: #dc2626; padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.78rem; font-weight: 700;">0%</span>
+                </div>
+                <div style="margin-top: 0.4rem; width: 100%; height: 5px; background: rgba(239, 68, 68, 0.15); border-radius: 10px; overflow: hidden;">
+                    <div id="rateFailedBar" style="height: 100%; width: 0%; background: #ef4444; border-radius: 10px; transition: width 0.6s ease;"></div>
+                </div>
+            </div>
+
+            <!-- 5. In Queue -->
+            <div class="glass-panel kpi-card" style="padding: 1.35rem 1.5rem; border-left: 4px solid #f59e0b; position: relative; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 0.35rem;">In Queue</div>
+                        <h2 style="font-size: 2.2rem; font-weight: 800; margin: 0; color: #f59e0b; line-height: 1.1;" id="statQueue">0</h2>
+                    </div>
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(245, 158, 11, 0.12); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                        <i class="ri-time-fill"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary);">
+                    Processed or awaiting carrier
                 </div>
             </div>
 
         </div>
 
-        <!-- Failure Analysis Table -->
-        <div class="glass-panel" style="padding: 1.5rem;">
-            <div style="font-size: 1.25rem; font-weight: 600; color: var(--text-main); padding-bottom: 1rem; border-bottom: 1px solid var(--border-light); margin-bottom: 1.5rem; display: flex; align-items: center;">
-                <i class="ri-error-warning-line" style="color: #f59e0b; margin-right: 8px;"></i>Failed Messages Log
+        <!-- Section 2: Template Breakdown Cards -->
+        <div style="margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                    <i class="ri-layout-grid-line" style="color: #6366f1;"></i> Performance by Template
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                    Click any template to filter failure log
+                </div>
             </div>
-            
+
+            <div id="templateCardsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Section 3: Failure Reasons Diagnostics -->
+        <div class="glass-panel" style="padding: 1.35rem 1.5rem; margin-bottom: 2rem; border-radius: 14px;">
+            <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-pie-chart-2-line" style="color: #ef4444;"></i> Failure Reason Diagnostics
+                <span id="failureReasonCount" style="font-size: 0.8rem; background: rgba(239, 68, 68, 0.12); color: #ef4444; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 600;">0 Failures</span>
+            </div>
+            <div id="failureReasonsContainer" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Section 4: Failure Log Table -->
+        <div class="glass-panel" style="padding: 1.5rem; border-radius: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--border-light); margin-bottom: 1.2rem;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(239, 68, 68, 0.12); color: #ef4444; display: flex; align-items: center; justify-content: center;">
+                        <i class="ri-error-warning-line" style="font-size: 1.1rem;"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Failed Messages Log</div>
+                        <div id="tableRecordCount" style="font-size: 0.8rem; color: var(--text-secondary);">Showing 0 records</div>
+                    </div>
+                </div>
+
+                <!-- Search and Controls -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <div style="position: relative; min-width: 240px;">
+                        <i class="ri-search-line" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+                        <input type="text" id="tableSearch" onkeyup="filterFailedTable()" placeholder="Search phone, template, reason..." style="width: 100%; padding: 0.55rem 0.85rem 0.55rem 2.2rem; border-radius: 8px; border: 1px solid var(--border-light); background: var(--bg-card, #fff); color: var(--text-main); font-size: 0.85rem; font-family: inherit;">
+                    </div>
+                    <button type="button" onclick="exportFailedMessages()" style="background: rgba(99, 102, 241, 0.12); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.25); padding: 0.55rem 0.9rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="ri-file-excel-line"></i> Download CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Wrapper -->
             <div style="overflow-x: auto;" id="tableWrapper">
-                <table style="width: 100%; border-collapse: collapse;" id="failedTable">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;" id="failedTable">
                     <thead>
-                        <tr>
-                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px;">Mobile Number</th>
-                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px;">Date</th>
-                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px;">Status</th>
-                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px;">Failure Reason</th>
+                        <tr style="background: rgba(0, 0, 0, 0.02);">
+                            <th style="padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">#</th>
+                            <th style="padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Mobile Number</th>
+                            <th style="padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Date & Time</th>
+                            <th style="padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Template</th>
+                            <th style="padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Status</th>
+                            <th style="padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Error Code</th>
+                            <th style="padding: 0.85rem 1rem; text-align: left; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Failure Reason</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <!-- Data will be populated here -->
+                    <tbody id="failedTableBody">
+                        <!-- Populated dynamically -->
                     </tbody>
                 </table>
             </div>
-            
-            <div id="noFailures" style="text-align: center; padding: 3rem 1rem; display: none;">
-                <i class="ri-emotion-happy-line" style="font-size: 3rem; color: #10b981; opacity: 0.7; margin-bottom: 1rem; display: block;"></i>
-                <h5 style="color: var(--text-main); margin-bottom: 0.5rem; font-size: 1.25rem;">No Failed Messages!</h5>
-                <p style="color: var(--text-secondary); margin: 0;">All messages in this date range were delivered successfully.</p>
+
+            <!-- Zero Failures Banner -->
+            <div id="noFailures" style="text-align: center; padding: 3.5rem 1rem; display: none;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.12); color: #10b981; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-size: 2rem;">
+                    <i class="ri-checkbox-circle-line"></i>
+                </div>
+                <h4 style="color: var(--text-main); margin-bottom: 0.35rem; font-size: 1.2rem; font-weight: 700;">No Failed Messages!</h4>
+                <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">All messages in this date range were delivered successfully without errors.</p>
             </div>
+
         </div>
+
     </div>
+
+</div>
+
+<!-- Toast notification element -->
+<div id="toastNotification" style="position: fixed; bottom: 24px; right: 24px; background: #1e293b; color: #fff; padding: 0.75rem 1.25rem; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 0.88rem; font-weight: 500; display: none; align-items: center; gap: 8px; z-index: 9999;">
+    <i class="ri-check-line" id="toastIcon" style="color: #10b981;"></i>
+    <span id="toastMsg">Action completed</span>
 </div>
 
 <style>
-    .spinner {
-        width: 3rem;
-        height: 3rem;
-        border: 4px solid rgba(59, 130, 246, 0.2);
-        border-top-color: #3b82f6;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 1.5rem auto;
+    .preset-btn {
+        background: #f1f5f9;
+        border: 1px solid var(--border-light, #e2e8f0);
+        color: var(--text-secondary, #64748b);
+        padding: 0.45rem 0.85rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
-
+    .preset-btn:hover {
+        background: #e2e8f0;
+        color: var(--text-main, #0f172a);
+    }
+    .preset-btn.active {
+        background: #6366f1;
+        color: #ffffff;
+        border-color: #6366f1;
+    }
+    .kpi-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    }
+    .template-card {
+        padding: 1.25rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-light);
+    }
+    .template-card:hover {
+        transform: translateY(-2px);
+        border-color: #6366f1;
+        box-shadow: 0 6px 18px rgba(99, 102, 241, 0.1);
+    }
+    .template-card.active-filter {
+        border-color: #6366f1;
+        background: rgba(99, 102, 241, 0.05);
+    }
+    .reason-pill {
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        color: #dc2626;
+        padding: 0.45rem 0.85rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .reason-pill:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+    .reason-pill.active-filter {
+        background: #ef4444;
+        color: #fff;
+    }
+    .spinner {
+        width: 2.8rem;
+        height: 2.8rem;
+        border: 4px solid rgba(99, 102, 241, 0.2);
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+        margin: 0 auto 1.25rem auto;
+    }
     @keyframes spin {
         to { transform: rotate(360deg); }
     }
-
+    #failedTable tbody tr {
+        transition: background 0.15s ease;
+    }
     #failedTable tbody tr:hover {
-        background: rgba(0, 0, 0, 0.02);
+        background: rgba(0, 0, 0, 0.025);
+    }
+    .copy-btn {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        background: none;
+        border: none;
+        color: #6366f1;
+        cursor: pointer;
+        padding: 2px 4px;
+    }
+    tr:hover .copy-btn {
+        opacity: 1;
     }
 </style>
 
 <script>
-    let pollInterval = null;
-    let pollTimer = null;
+    let globalReportData = null;
+    let currentFailedMessages = [];
+    let selectedTemplateFilter = 'all';
+    let selectedReasonFilter = 'all';
+    let availableReportsList = [];
 
     document.addEventListener('DOMContentLoaded', function() {
-        const today = new Date();
-        const ninetyDaysAgo = new Date(today);
-        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        // Initialize default dates
+        initDefaultDates();
         
-        document.getElementById('toDate').value = today.toISOString().split('T')[0];
-        document.getElementById('fromDate').value = ninetyDaysAgo.toISOString().split('T')[0];
-        
-        document.getElementById('fromDate').addEventListener('change', () => generateReport());
-        document.getElementById('toDate').addEventListener('change', () => generateReport());
-        
+        // Listeners for date inputs
+        document.getElementById('fromDate').addEventListener('change', () => {
+            clearPresetButtons();
+            generateReport();
+        });
+        document.getElementById('toDate').addEventListener('change', () => {
+            clearPresetButtons();
+            generateReport();
+        });
+
+        // Trigger initial report load
         generateReport();
     });
 
-    async function generateReport() {
-        if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    function initDefaultDates() {
+        const today = new Date();
+        const ninetyDaysAgo = new Date(today);
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 92);
+        
+        document.getElementById('toDate').value = today.toISOString().split('T')[0];
+        document.getElementById('fromDate').value = ninetyDaysAgo.toISOString().split('T')[0];
+    }
 
+    function applyPreset(days) {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+        
+        if (days === 'all') {
+            document.getElementById('btnPresetAll').classList.add('active');
+            document.getElementById('fromDate').value = '2026-07-01';
+            const today = new Date();
+            document.getElementById('toDate').value = today.toISOString().split('T')[0];
+        } else {
+            const btn = document.getElementById('btnPreset' + days);
+            if (btn) btn.classList.add('active');
+            
+            const today = new Date();
+            const pastDate = new Date(today);
+            pastDate.setDate(pastDate.getDate() - days);
+            
+            document.getElementById('toDate').value = today.toISOString().split('T')[0];
+            document.getElementById('fromDate').value = pastDate.toISOString().split('T')[0];
+        }
+        
+        generateReport();
+    }
+
+    function clearPresetButtons() {
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    }
+
+    async function generateReport() {
         const fromDate = document.getElementById('fromDate').value;
         const toDate = document.getElementById('toDate').value;
-        
-        if (!fromDate || !toDate) return;
+        const template = document.getElementById('templateFilter').value;
+        const reportFile = document.getElementById('reportFileSelect').value || null;
+
+        const refreshIcon = document.getElementById('refreshIcon');
+        if (refreshIcon) refreshIcon.style.animation = 'spin 1s linear infinite';
 
         document.getElementById('errorState').style.display = 'none';
-        document.getElementById('resultsSection').style.display = 'none';
         document.getElementById('loadingState').style.display = 'block';
-        document.getElementById('loadingText').innerText = 'Requesting report from Telfiny...';
+        document.getElementById('resultsSection').style.display = 'none';
 
         try {
-            const reqRes = await fetch('/api/whatsapp/request-report', {
+            const res = await fetch('/api/whatsapp/request-report', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fromDate, toDate })
+                body: JSON.stringify({ fromDate, toDate, template, reportFile })
             });
-            const reqData = await reqRes.json();
+            const data = await res.json();
 
-            if (!reqRes.ok || !reqData.success) {
-                throw new Error(reqData.message || 'Failed to request report.');
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Failed to fetch WhatsApp report.');
             }
 
-            const fileId = reqData.fileID;
-            document.getElementById('loadingText').innerText = 'Processing report... please wait';
-            pollForReport(fileId, 0);
+            globalReportData = data.data;
+
+            // Update Active Report header badge
+            if (data.report_file) {
+                document.getElementById('activeReportName').innerText = data.report_file;
+            }
+            if (data.data.file_info) {
+                const total = data.data.file_info.total_in_file || 0;
+                document.getElementById('activeReportBadge').innerText = `${total.toLocaleString()} Records`;
+            }
+
+            // Populate Report Switcher Dropdown if multiple reports
+            if (data.available_reports && data.available_reports.length > 0) {
+                availableReportsList = data.available_reports;
+                const sel = document.getElementById('reportFileSelect');
+                sel.innerHTML = '';
+                data.available_reports.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.filename;
+                    opt.innerText = r.filename;
+                    if (r.filename === data.report_file) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+                sel.style.display = data.available_reports.length > 1 ? 'inline-block' : 'none';
+            }
+
+            // Render Dashboard Data
+            displayReportData(data.data);
 
         } catch (error) {
             showError(error.message);
+        } finally {
+            if (refreshIcon) refreshIcon.style.animation = 'none';
         }
     }
 
-    async function pollForReport(fileId, attempts) {
-        if (attempts > 30) {
-            showError('Report is taking too long. Please try again.');
+    function displayReportData(data) {
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('resultsSection').style.display = 'block';
+
+        const stats = data.stats || data;
+        
+        // 1. Update KPI Values
+        document.getElementById('statSent').innerText = (stats.sent || 0).toLocaleString();
+        document.getElementById('statDelivered').innerText = (stats.delivered || 0).toLocaleString();
+        document.getElementById('statRead').innerText = (stats.read || 0).toLocaleString();
+        document.getElementById('statFailed').innerText = (stats.failed || 0).toLocaleString();
+        document.getElementById('statQueue').innerText = (stats.queue || 0).toLocaleString();
+
+        // 2. Update Rates & Progress Bars
+        const deliveryRate = stats.delivery_rate || 0;
+        const readRate = stats.read_rate || 0;
+        const failureRate = stats.failure_rate || 0;
+
+        document.getElementById('rateDeliveredBadge').innerText = `${deliveryRate}%`;
+        document.getElementById('rateDeliveredBar').style.width = `${Math.min(deliveryRate, 100)}%`;
+
+        document.getElementById('rateReadBadge').innerText = `${readRate}%`;
+        document.getElementById('rateReadBar').style.width = `${Math.min(readRate, 100)}%`;
+
+        document.getElementById('rateFailedBadge').innerText = `${failureRate}%`;
+        document.getElementById('rateFailedBar').style.width = `${Math.min(failureRate, 100)}%`;
+
+        // 3. Render Template Breakdown Cards
+        renderTemplateCards(data.templates || []);
+
+        // 4. Render Failure Diagnostics
+        renderFailureReasons(data.failure_reasons || [], stats.failed || 0);
+
+        // 5. Render Failed Messages Table
+        currentFailedMessages = data.failed_messages || [];
+        renderFailedTable(currentFailedMessages);
+    }
+
+    function renderTemplateCards(templates) {
+        const container = document.getElementById('templateCardsGrid');
+        container.innerHTML = '';
+
+        if (!templates || templates.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.9rem;">No template data available.</div>';
             return;
         }
 
+        templates.forEach(t => {
+            const card = document.createElement('div');
+            card.className = `glass-panel template-card ${selectedTemplateFilter === t.name ? 'active-filter' : ''}`;
+            card.onclick = () => filterByTemplateCard(t.name);
+
+            const deliveryPct = t.delivery_rate || 0;
+            const healthColor = deliveryPct >= 80 ? '#10b981' : (deliveryPct >= 60 ? '#f59e0b' : '#ef4444');
+
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                    <div>
+                        <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">${t.label || t.name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: monospace;">${t.name}</div>
+                    </div>
+                    <span style="background: rgba(99, 102, 241, 0.12); color: #6366f1; padding: 0.2rem 0.55rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700;">
+                        ${(t.total || 0).toLocaleString()} Sent
+                    </span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.4rem;">
+                    <span style="color: var(--text-secondary);">Delivery Rate</span>
+                    <strong style="color: ${healthColor};">${deliveryPct}%</strong>
+                </div>
+                <div style="width: 100%; height: 5px; background: rgba(0,0,0,0.06); border-radius: 10px; overflow: hidden; margin-bottom: 0.75rem;">
+                    <div style="height: 100%; width: ${Math.min(deliveryPct, 100)}%; background: ${healthColor}; border-radius: 10px;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; padding-top: 0.5rem; border-top: 1px solid var(--border-light);">
+                    <span style="color: #10b981;"><i class="ri-check-line"></i> ${t.delivered || 0} Delivered</span>
+                    <span style="color: #8b5cf6;"><i class="ri-mail-open-line"></i> ${t.read || 0} Read</span>
+                    <span style="color: #ef4444; font-weight: 600;"><i class="ri-close-line"></i> ${t.failed || 0} Failed</span>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function renderFailureReasons(reasons, totalFailed) {
+        const container = document.getElementById('failureReasonsContainer');
+        container.innerHTML = '';
+        document.getElementById('failureReasonCount').innerText = `${totalFailed.toLocaleString()} Failed Total`;
+
+        if (!reasons || reasons.length === 0) {
+            container.innerHTML = '<span style="color: #10b981; font-size: 0.85rem;"><i class="ri-check-line"></i> No failures recorded in this period.</span>';
+            return;
+        }
+
+        // Add "All Reasons" reset button
+        const allBtn = document.createElement('button');
+        allBtn.className = `reason-pill ${selectedReasonFilter === 'all' ? 'active-filter' : ''}`;
+        allBtn.innerHTML = `<span>All Failures</span> <strong style="opacity: 0.9;">(${totalFailed})</strong>`;
+        allBtn.onclick = () => filterByReasonPill('all');
+        container.appendChild(allBtn);
+
+        reasons.forEach(r => {
+            const pill = document.createElement('button');
+            pill.className = `reason-pill ${selectedReasonFilter === r.reason ? 'active-filter' : ''}`;
+            pill.onclick = () => filterByReasonPill(r.reason);
+            pill.innerHTML = `
+                <i class="ri-alert-line"></i>
+                <span>${r.reason}</span>
+                <span style="background: rgba(0,0,0,0.15); padding: 1px 6px; border-radius: 10px; font-size: 0.75rem;">${r.count}</span>
+            `;
+            container.appendChild(pill);
+        });
+    }
+
+    function renderFailedTable(messages) {
+        const tbody = document.getElementById('failedTableBody');
+        tbody.innerHTML = '';
+
+        if (!messages || messages.length === 0) {
+            document.getElementById('tableWrapper').style.display = 'none';
+            document.getElementById('noFailures').style.display = 'block';
+            document.getElementById('tableRecordCount').innerText = '0 records';
+            return;
+        }
+
+        document.getElementById('noFailures').style.display = 'none';
+        document.getElementById('tableWrapper').style.display = 'block';
+        document.getElementById('tableRecordCount').innerText = `Showing ${messages.length.toLocaleString()} failed message${messages.length === 1 ? '' : 's'}`;
+
+        messages.forEach((msg, idx) => {
+            const tr = document.createElement('tr');
+            
+            // Format phone with spaces e.g. 91 97456 16728
+            const rawPhone = String(msg.mobile || '').trim();
+            let formattedPhone = rawPhone;
+            if (rawPhone.length === 12 && rawPhone.startsWith('91')) {
+                formattedPhone = `+91 ${rawPhone.slice(2, 7)} ${rawPhone.slice(7)}`;
+            } else if (rawPhone.length === 10) {
+                formattedPhone = `+91 ${rawPhone.slice(0, 5)} ${rawPhone.slice(5)}`;
+            }
+
+            tr.innerHTML = `
+                <td style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); font-size: 0.8rem;">
+                    ${idx + 1}
+                </td>
+                <td style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); font-weight: 600; color: var(--text-main);">
+                    <span>${formattedPhone}</span>
+                    <button class="copy-btn" onclick="copyToClipboard('${rawPhone}')" title="Copy number">
+                        <i class="ri-file-copy-line"></i>
+                    </button>
+                </td>
+                <td style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); white-space: nowrap; font-size: 0.83rem;">
+                    ${msg.date || 'N/A'}
+                </td>
+                <td style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light);">
+                    <span style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.78rem; font-weight: 600; display: inline-block;">
+                        ${msg.template_label || msg.template || 'Template'}
+                    </span>
+                </td>
+                <td style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light);">
+                    <span style="background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 0.2rem 0.65rem; border-radius: 50px; font-size: 0.75rem; font-weight: 700;">
+                        Un Delivered
+                    </span>
+                </td>
+                <td style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); font-family: monospace; font-size: 0.8rem; color: var(--text-secondary);">
+                    ${msg.error_code || '—'}
+                </td>
+                <td style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-light); color: #b91c1c; font-weight: 500;">
+                    ${msg.reason || 'Unknown'}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function filterFailedTable() {
+        const query = document.getElementById('tableSearch').value.toLowerCase().trim();
+        
+        let filtered = currentFailedMessages;
+
+        if (selectedTemplateFilter !== 'all') {
+            filtered = filtered.filter(m => m.template === selectedTemplateFilter);
+        }
+
+        if (selectedReasonFilter !== 'all') {
+            filtered = filtered.filter(m => m.reason === selectedReasonFilter);
+        }
+
+        if (query) {
+            filtered = filtered.filter(m => {
+                const phone = String(m.mobile || '').toLowerCase();
+                const template = String(m.template || '').toLowerCase();
+                const templateLabel = String(m.template_label || '').toLowerCase();
+                const reason = String(m.reason || '').toLowerCase();
+                const errCode = String(m.error_code || '').toLowerCase();
+                return phone.includes(query) || template.includes(query) || templateLabel.includes(query) || reason.includes(query) || errCode.includes(query);
+            });
+        }
+
+        renderFailedTable(filtered);
+    }
+
+    function filterByTemplateCard(templateName) {
+        if (selectedTemplateFilter === templateName) {
+            selectedTemplateFilter = 'all';
+        } else {
+            selectedTemplateFilter = templateName;
+        }
+
+        // Re-render template cards to reflect active state
+        if (globalReportData && globalReportData.templates) {
+            renderTemplateCards(globalReportData.templates);
+        }
+
+        filterFailedTable();
+    }
+
+    function filterByReasonPill(reason) {
+        selectedReasonFilter = reason;
+        
+        // Re-render pills
+        if (globalReportData && globalReportData.failure_reasons) {
+            renderFailureReasons(globalReportData.failure_reasons, globalReportData.stats ? globalReportData.stats.failed : 0);
+        }
+
+        filterFailedTable();
+    }
+
+    function onReportFileChange() {
+        generateReport();
+    }
+
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        showToast('Uploading CSV report...', 'info');
+
         try {
-            const res = await fetch(`/api/whatsapp/poll-report/${fileId}`);
+            const res = await fetch('/api/whatsapp/upload-report', {
+                method: 'POST',
+                body: formData
+            });
             const data = await res.json();
 
-            if (data.status === 'pending') {
-                document.getElementById('loadingText').innerText = `Processing report... (${attempts + 1}s)`;
-                pollTimer = setTimeout(() => pollForReport(fileId, attempts + 1), 2000);
-            } else if (data.status === 'completed') {
-                displayResults(data.data);
-            } else {
-                showError(data.message || 'Failed to fetch report file.');
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Upload failed.');
             }
+
+            showToast(data.message || 'Report uploaded successfully!', 'success');
+            
+            // Re-generate report with new file
+            await generateReport();
+
         } catch (error) {
-            showError(error.message);
+            showError('Upload error: ' + error.message);
+        } finally {
+            event.target.value = '';
         }
     }
 
-    function displayResults(data) {
-        document.getElementById('loadingState').style.display = 'none';
-        
-        document.getElementById('statSent').innerText = data.sent || 0;
-        document.getElementById('statDelivered').innerText = data.delivered || 0;
-        document.getElementById('statRead').innerText = data.read || 0;
-        document.getElementById('statFailed').innerText = data.failed || 0;
-        
-        const tbody = document.querySelector('#failedTable tbody');
-        tbody.innerHTML = '';
-        
-        if (data.failed_messages && data.failed_messages.length > 0) {
-            document.getElementById('noFailures').style.display = 'none';
-            document.getElementById('tableWrapper').style.display = 'block';
-            
-            data.failed_messages.forEach(msg => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="padding: 1rem; border-bottom: 1px solid var(--border-light); font-weight: 600; color: var(--text-main);">${msg.mobile || 'Unknown'}</td>
-                    <td style="padding: 1rem; border-bottom: 1px solid var(--border-light); color: var(--text-secondary);">${msg.date || 'Unknown'}</td>
-                    <td style="padding: 1rem; border-bottom: 1px solid var(--border-light);">
-                        <span style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600;">Failed</span>
-                    </td>
-                    <td style="padding: 1rem; border-bottom: 1px solid var(--border-light); color: var(--text-secondary);">${msg.reason || 'Unknown Error'}</td>
-                `;
-                tbody.appendChild(tr);
+    async function exportFailedMessages() {
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        const reportFile = document.getElementById('reportFileSelect').value || null;
+
+        showToast('Preparing failed messages CSV download...', 'info');
+
+        try {
+            const res = await fetch('/api/whatsapp/export-failed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fromDate, toDate, reportFile })
             });
-        } else {
-            document.getElementById('tableWrapper').style.display = 'none';
-            document.getElementById('noFailures').style.display = 'block';
+
+            if (!res.ok) {
+                throw new Error('Failed to generate export file.');
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `whatsapp_failures_${fromDate}_to_${toDate}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+            showToast('Download complete!', 'success');
+
+        } catch (error) {
+            showError('Export error: ' + error.message);
         }
+    }
+
+    function copyToClipboard(text) {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(`Copied ${text} to clipboard!`, 'success');
+        }).catch(() => {
+            showToast(`Failed to copy to clipboard`, 'error');
+        });
+    }
+
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toastNotification');
+        const icon = document.getElementById('toastIcon');
+        const msg = document.getElementById('toastMsg');
         
-        document.getElementById('resultsSection').style.display = 'block';
+        msg.innerText = message;
+        if (type === 'success') {
+            icon.className = 'ri-checkbox-circle-fill';
+            icon.style.color = '#10b981';
+        } else if (type === 'error') {
+            icon.className = 'ri-error-warning-fill';
+            icon.style.color = '#ef4444';
+        } else {
+            icon.className = 'ri-information-fill';
+            icon.style.color = '#38bdf8';
+        }
+
+        toast.style.display = 'flex';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3200);
     }
 
     function showError(message) {
         document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('resultsSection').style.display = 'none';
         document.getElementById('errorText').innerText = message;
         document.getElementById('errorState').style.display = 'flex';
     }
 </script>
-
 {% endblock %}

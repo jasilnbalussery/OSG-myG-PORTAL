@@ -3988,145 +3988,350 @@ def telfiny_webhook():
 
     return jsonify({'success': True}), 200
 
+# ── WA REPORT CSV ENGINE ────────────────────────────────────────────────────────
+
+def get_available_wa_reports():
+    candidates = []
+    seen_names = set()
+    
+    # 1. Check wa_reports/ directory
+    wa_folder = os.path.join(BASE_DIR, 'wa_reports')
+    if os.path.exists(wa_folder):
+        for fname in os.listdir(wa_folder):
+            if fname.lower().endswith('.csv'):
+                fpath = os.path.join(wa_folder, fname)
+                try:
+                    mtime = os.path.getmtime(fpath)
+                    size = os.path.getsize(fpath)
+                    candidates.append({
+                        'filename': fname,
+                        'path': fpath,
+                        'mtime': mtime,
+                        'size': size
+                    })
+                    seen_names.add(fname)
+                except Exception:
+                    pass
+                
+    # 2. Check BASE_DIR
+    for fname in os.listdir(BASE_DIR):
+        if fname.lower().endswith('.csv') and fname not in seen_names:
+            if 'wa' in fname.lower() or 'report' in fname.lower() or fname.startswith('2026'):
+                fpath = os.path.join(BASE_DIR, fname)
+                try:
+                    mtime = os.path.getmtime(fpath)
+                    size = os.path.getsize(fpath)
+                    candidates.append({
+                        'filename': fname,
+                        'path': fpath,
+                        'mtime': mtime,
+                        'size': size
+                    })
+                    seen_names.add(fname)
+                except Exception:
+                    pass
+
+    # Sort so that '20261028131447_WA_API_Reports.csv' is prioritized, followed by latest mtime
+    def sort_key(item):
+        if item['filename'] == '20261028131447_WA_API_Reports.csv':
+            return (1, item['mtime'])
+        return (0, item['mtime'])
+
+    candidates.sort(key=sort_key, reverse=True)
+    return candidates
+
+
+def parse_wa_report_csv(file_path, from_date_str=None, to_date_str=None, template_filter=None):
+    from datetime import datetime
+    from collections import Counter
+    
+    from_dt = None
+    to_dt = None
+    if from_date_str:
+        try:
+            from_dt = datetime.strptime(from_date_str.strip(), '%Y-%m-%d')
+        except Exception:
+            pass
+    if to_date_str:
+        try:
+            to_dt = datetime.strptime(to_date_str.strip() + ' 23:59:59', '%Y-%m-%d %H:%M:%S')
+        except Exception:
+            pass
+
+    template_labels = {
+        'myg_onsitego_registered_main': 'Claim Registered',
+        'myg_onsitego_replacement_main': 'Replacement Approved',
+        'myg_onsitego_repair_completed_main': 'Repair Completed',
+        'myg_onsitego_part_order_main': 'Part Ordered'
+    }
+
+    stats = {'sent': 0, 'delivered': 0, 'read': 0, 'failed': 0, 'queue': 0, 'sent_only': 0}
+    template_stats = {}
+    failure_reasons = Counter()
+    failed_messages = []
+    total_in_file = 0
+    file_dates = []
+
+    if not os.path.exists(file_path):
+        return None
+
+    with open(file_path, 'r', encoding='utf-8-sig', errors='replace') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            total_in_file += 1
+            send_time_str = (row.get('Send Date & time') or '').strip()
+            row_dt = None
+            if send_time_str and send_time_str != 'NIL':
+                for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%d-%m-%Y %H:%M:%S', '%d/%m/%Y %H:%M:%S'):
+                    try:
+                        row_dt = datetime.strptime(send_time_str, fmt)
+                        file_dates.append(row_dt)
+                        break
+                    except Exception:
+                        pass
+
+            if from_dt and row_dt and row_dt < from_dt:
+                continue
+            if to_dt and row_dt and row_dt > to_dt:
+                continue
+
+            tpl = (row.get('Template Name') or 'Other').strip()
+            if template_filter and template_filter.lower() != 'all':
+                if tpl.lower() != template_filter.lower() and template_labels.get(tpl, '').lower() != template_filter.lower():
+                    continue
+
+            stats['sent'] += 1
+            st = (row.get('Status') or '').strip().lower()
+            tpl_label = template_labels.get(tpl, tpl.replace('_', ' ').title())
+
+            if tpl not in template_stats:
+                template_stats[tpl] = {'name': tpl, 'label': tpl_label, 'total': 0, 'delivered': 0, 'read': 0, 'failed': 0}
+            template_stats[tpl]['total'] += 1
+
+            if st == 'read':
+                stats['delivered'] += 1
+                stats['read'] += 1
+                template_stats[tpl]['delivered'] += 1
+                template_stats[tpl]['read'] += 1
+            elif st == 'delivered':
+                stats['delivered'] += 1
+                template_stats[tpl]['delivered'] += 1
+            elif st in ('un delivered', 'undelivered', 'failed', 'rejected', 'error'):
+                stats['failed'] += 1
+                template_stats[tpl]['failed'] += 1
+                reason = (row.get('Code-Description') or row.get('Error Code') or 'Unknown').strip()
+                failure_reasons[reason] += 1
+                failed_messages.append({
+                    'mobile': row.get('Mobile number') or 'N/A',
+                    'date': send_time_str,
+                    'template': tpl,
+                    'template_label': tpl_label,
+                    'status': 'Un Delivered',
+                    'error_code': row.get('Error Code') or '',
+                    'reason': reason
+                })
+            elif st == 'queue':
+                stats['queue'] += 1
+            elif st == 'sent':
+                stats['sent_only'] += 1
+
+    delivery_rate = round(stats['delivered'] / stats['sent'] * 100, 1) if stats['sent'] > 0 else 0
+    read_rate = round(stats['read'] / stats['delivered'] * 100, 1) if stats['delivered'] > 0 else 0
+    read_of_total = round(stats['read'] / stats['sent'] * 100, 1) if stats['sent'] > 0 else 0
+    failure_rate = round(stats['failed'] / stats['sent'] * 100, 1) if stats['sent'] > 0 else 0
+
+    tpl_list = list(template_stats.values())
+    tpl_list.sort(key=lambda x: x['total'], reverse=True)
+    for item in tpl_list:
+        item['delivery_rate'] = round(item['delivered'] / item['total'] * 100, 1) if item['total'] > 0 else 0
+        item['read_rate'] = round(item['read'] / item['delivered'] * 100, 1) if item['delivered'] > 0 else 0
+        item['failure_rate'] = round(item['failed'] / item['total'] * 100, 1) if item['total'] > 0 else 0
+
+    return {
+        'stats': {
+            **stats,
+            'delivery_rate': delivery_rate,
+            'read_rate': read_rate,
+            'read_of_total': read_of_total,
+            'failure_rate': failure_rate
+        },
+        'templates': tpl_list,
+        'failure_reasons': [{'reason': k, 'count': v} for k, v in failure_reasons.most_common()],
+        'failed_messages': failed_messages,
+        'file_info': {
+            'filename': os.path.basename(file_path),
+            'total_in_file': total_in_file,
+            'min_date': min(file_dates).strftime('%Y-%m-%d') if file_dates else None,
+            'max_date': max(file_dates).strftime('%Y-%m-%d') if file_dates else None
+        }
+    }
+
+
 @app.route('/api/whatsapp/request-report', methods=['POST'])
 @login_required
 def request_whatsapp_report():
-    data = request.json
+    data = request.json or {}
     from_date = data.get('fromDate')
     to_date = data.get('toDate')
+    report_file = data.get('reportFile')
+    template_filter = data.get('template')
 
-    if not from_date or not to_date:
-        return jsonify({'success': False, 'message': 'Missing dates'}), 400
+    reports = get_available_wa_reports()
+    target_path = None
+    if report_file:
+        for r in reports:
+            if r['filename'] == report_file:
+                target_path = r['path']
+                break
+    if not target_path and reports:
+        target_path = reports[0]['path']
 
+    if target_path and os.path.exists(target_path):
+        parsed = parse_wa_report_csv(target_path, from_date, to_date, template_filter)
+        if parsed:
+            return jsonify({
+                'success': True,
+                'status': 'completed',
+                'source': 'csv_report',
+                'report_file': os.path.basename(target_path),
+                'available_reports': [{'filename': r['filename'], 'size': r['size']} for r in reports],
+                'data': {
+                    'sent': parsed['stats']['sent'],
+                    'delivered': parsed['stats']['delivered'],
+                    'read': parsed['stats']['read'],
+                    'failed': parsed['stats']['failed'],
+                    'queue': parsed['stats']['queue'],
+                    'delivery_rate': parsed['stats']['delivery_rate'],
+                    'read_rate': parsed['stats']['read_rate'],
+                    'read_of_total': parsed['stats']['read_of_total'],
+                    'failure_rate': parsed['stats']['failure_rate'],
+                    'templates': parsed['templates'],
+                    'failure_reasons': parsed['failure_reasons'],
+                    'failed_messages': parsed['failed_messages'],
+                    'file_info': parsed['file_info']
+                }
+            }), 200
+
+    # Fallback: Telfiny API if no local report found
     api_key = os.environ.get('TELFINY_API_KEY')
     if not api_key:
-        return jsonify({'success': False, 'message': 'Telfiny API key not configured'}), 500
+        return jsonify({'success': False, 'message': 'No local report CSV found and Telfiny API key is not configured'}), 404
 
     try:
         headers = {'x-api-key': api_key, 'Content-Type': 'application/json'}
-
-        # Try the two-step download flow: POST request-download → get fileID
         telfiny_url = 'https://hub.telinfy.com/unified/developer/api/v1/whatsapp/reports/request-download'
-        # Telfiny expects startDate/endDate (not fromDate/toDate)
-        resp = requests.post(telfiny_url, json={'startDate': from_date, 'endDate': to_date}, headers=headers, timeout=15)
-        logging.info(f'[WA_REPORT] request-download status={resp.status_code} body={resp.text[:500]}')
-
+        resp = requests.post(telfiny_url, json={'fromDate': from_date, 'toDate': to_date}, headers=headers, timeout=15)
         if resp.ok:
             resp_json = resp.json()
-            file_id = (resp_json.get('fileID') or resp_json.get('file_id')
-                       or resp_json.get('id') or resp_json.get('downloadId')
-                       or resp_json.get('requestId'))
+            file_id = resp_json.get('fileID')
             if file_id:
                 return jsonify({'success': True, 'fileID': str(file_id), 'status': 'pending'}), 200
-
-        # Fallback: single-call GET endpoint
-        get_url = 'https://hub.telinfy.com/unified/developer/api/v1/whatsapp/reports'
-        get_resp = requests.get(get_url,
-                                params={'startDate': from_date, 'endDate': to_date},
-                                headers={'x-api-key': api_key}, timeout=15)
-        logging.info(f'[WA_REPORT] GET reports status={get_resp.status_code} body={get_resp.text[:500]}')
-
-        if get_resp.ok:
-            return jsonify({'success': True, 'fileID': f'direct_{from_date}_{to_date}',
-                            'status': 'pending', '_direct_data': get_resp.text[:5000]}), 200
-
-        return jsonify({'success': False,
-                        'message': f'Telfiny error — request-download: {resp.status_code} {resp.text[:150]} | GET: {get_resp.status_code} {get_resp.text[:150]}'}), 502
-
+        return jsonify({'success': False, 'message': f'Telfiny API error: {resp.text[:200]}'}), 502
     except Exception as e:
-        logging.error(f'[WA_REPORT] request-download error: {e}')
         return jsonify({'success': False, 'message': str(e)}), 500
+
 
 @app.route('/api/whatsapp/poll-report/<file_id>', methods=['GET'])
 @login_required
 def poll_whatsapp_report(file_id):
-    api_key = os.environ.get('TELFINY_API_KEY')
-    if not api_key:
-        return jsonify({'status': 'error', 'message': 'Telfiny API key not configured'}), 500
+    reports = get_available_wa_reports()
+    if reports:
+        parsed = parse_wa_report_csv(reports[0]['path'])
+        if parsed:
+            return jsonify({
+                'status': 'completed',
+                'data': {
+                    'sent': parsed['stats']['sent'],
+                    'delivered': parsed['stats']['delivered'],
+                    'read': parsed['stats']['read'],
+                    'failed': parsed['stats']['failed'],
+                    'queue': parsed['stats']['queue'],
+                    'delivery_rate': parsed['stats']['delivery_rate'],
+                    'read_rate': parsed['stats']['read_rate'],
+                    'read_of_total': parsed['stats']['read_of_total'],
+                    'failure_rate': parsed['stats']['failure_rate'],
+                    'templates': parsed['templates'],
+                    'failure_reasons': parsed['failure_reasons'],
+                    'failed_messages': parsed['failed_messages'],
+                    'file_info': parsed['file_info']
+                }
+            }), 200
+    return jsonify({'status': 'error', 'message': 'Report not available'}), 404
 
+
+@app.route('/api/whatsapp/upload-report', methods=['POST'])
+@login_required
+def upload_whatsapp_report():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+    file = request.files['file']
+    if not file or not file.filename:
+        return jsonify({'success': False, 'message': 'Empty file selected'}), 400
+    if not file.filename.lower().endswith('.csv'):
+        return jsonify({'success': False, 'message': 'Only CSV files are supported'}), 400
+
+    wa_folder = os.path.join(BASE_DIR, 'wa_reports')
+    os.makedirs(wa_folder, exist_ok=True)
+    
+    safe_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename)
+    dest_path = os.path.join(wa_folder, safe_name)
+    file.save(dest_path)
+    
     try:
-        # Correct endpoint: GET .../reports/download-file?fileID=12345
-        telfiny_url = 'https://hub.telinfy.com/unified/developer/api/v1/whatsapp/reports/download-file'
-        headers = {'x-api-key': api_key}
-        resp = requests.get(telfiny_url, params={'fileID': file_id}, headers=headers, timeout=20)
-
-        logging.info(f'[WA_REPORT] download-file fileID={file_id} status={resp.status_code} ct={resp.headers.get("Content-Type","")}')
-
-        # Still processing
-        if resp.status_code == 202:
-            return jsonify({'status': 'pending'}), 200
-        if resp.ok:
-            try:
-                j = resp.json()
-                # Telfiny returns {success, status, message} when still processing
-                if str(j.get('status','')).lower() in ('processing', 'pending') or not j.get('success', True) is False and 'processing' in str(j.get('message','')).lower():
-                    return jsonify({'status': 'pending'}), 200
-            except Exception:
-                pass  # Not JSON — likely the actual file
-
-        if not resp.ok:
-            return jsonify({'status': 'error', 'message': f'Telfiny error {resp.status_code}: {resp.text[:200]}'}), 502
-
-        content_type = resp.headers.get('Content-Type', '')
-        text = resp.text.strip()
-
-        # ── Parse CSV ──────────────────────────────────────────────────────────
-        if 'csv' in content_type or 'text/plain' in content_type or (',' in text[:200] and '\n' in text):
-            reader = csv.DictReader(io.StringIO(text))
-            rows = list(reader)
-            stats = {'sent': 0, 'delivered': 0, 'read': 0, 'failed': 0}
-            failed_messages = []
-            for row in rows:
-                r = {k.lower().strip().replace(' ', '_'): str(v).lower().strip() for k, v in row.items()}
-                status = r.get('status') or r.get('dlr_status') or r.get('delivery_status') or ''
-                if status in ('sent', 'submitted', 'accepted', 'queued'):
-                    stats['sent'] += 1
-                elif status == 'delivered':
-                    stats['sent'] += 1
-                    stats['delivered'] += 1
-                elif status == 'read':
-                    stats['sent'] += 1
-                    stats['delivered'] += 1
-                    stats['read'] += 1
-                elif status in ('failed', 'error', 'undelivered', 'rejected', 'expired'):
-                    stats['sent'] += 1
-                    stats['failed'] += 1
-                    mobile = r.get('mobile') or r.get('phone') or r.get('to') or r.get('recipient') or r.get('phonenumber') or ''
-                    date   = r.get('date') or r.get('timestamp') or r.get('created_at') or r.get('sent_at') or ''
-                    reason = r.get('failure_reason') or r.get('error') or r.get('error_message') or r.get('reason') or 'Unknown'
-                    failed_messages.append({'mobile': mobile, 'date': date, 'reason': reason})
-            return jsonify({'status': 'completed', 'data': {**stats, 'failed_messages': failed_messages}}), 200
-
-        # ── Parse JSON ─────────────────────────────────────────────────────────
-        try:
-            j = resp.json()
-            if isinstance(j, list):
-                stats = {'sent': 0, 'delivered': 0, 'read': 0, 'failed': 0}
-                failed_messages = []
-                for row in j:
-                    s = str(row.get('status', '')).lower()
-                    if s in ('sent', 'submitted'):
-                        stats['sent'] += 1
-                    elif s == 'delivered':
-                        stats['sent'] += 1; stats['delivered'] += 1
-                    elif s == 'read':
-                        stats['sent'] += 1; stats['delivered'] += 1; stats['read'] += 1
-                    elif s in ('failed', 'error', 'undelivered'):
-                        stats['sent'] += 1; stats['failed'] += 1
-                        failed_messages.append({'mobile': row.get('to', ''), 'date': row.get('timestamp', ''), 'reason': row.get('error', 'Unknown')})
-                return jsonify({'status': 'completed', 'data': {**stats, 'failed_messages': failed_messages}}), 200
-            if isinstance(j, dict):
-                stats = {'sent': j.get('sent', 0), 'delivered': j.get('delivered', 0), 'read': j.get('read', 0), 'failed': j.get('failed', 0)}
-                return jsonify({'status': 'completed', 'data': {**stats, 'failed_messages': j.get('failed_messages', [])}}), 200
-        except Exception:
-            pass
-
-        logging.warning(f'[WA_REPORT] Unknown response: {text[:300]}')
-        return jsonify({'status': 'error', 'message': f'Unexpected Telfiny response: {text[:200]}'}), 502
-
+        with open(dest_path, 'r', encoding='utf-8-sig', errors='replace') as f:
+            reader = csv.DictReader(f)
+            fieldnames = [c.lower() for c in (reader.fieldnames or [])]
+            if not any('status' in fn for fn in fieldnames):
+                os.remove(dest_path)
+                return jsonify({'success': False, 'message': 'CSV missing Status column — not a valid WhatsApp report'}), 400
     except Exception as e:
-        logging.error(f'[WA_REPORT] poll error: {e}')
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'success': False, 'message': f'Error reading CSV: {e}'}), 400
+
+    return jsonify({
+        'success': True,
+        'message': f'Report "{safe_name}" uploaded successfully!',
+        'filename': safe_name
+    }), 200
+
+
+@app.route('/api/whatsapp/export-failed', methods=['POST'])
+@login_required
+def export_failed_whatsapp_report():
+    from flask import Response
+    data = request.json or {}
+    from_date = data.get('fromDate')
+    to_date = data.get('toDate')
+    report_file = data.get('reportFile')
+    
+    reports = get_available_wa_reports()
+    target_path = None
+    if report_file:
+        for r in reports:
+            if r['filename'] == report_file:
+                target_path = r['path']
+                break
+    if not target_path and reports:
+        target_path = reports[0]['path']
+        
+    if not target_path or not os.path.exists(target_path):
+        return jsonify({'success': False, 'message': 'Report file not found'}), 404
+
+    parsed = parse_wa_report_csv(target_path, from_date, to_date)
+    failed_msgs = parsed.get('failed_messages', []) if parsed else []
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Mobile Number', 'Send Date & Time', 'Template', 'Status', 'Error Code', 'Failure Reason'])
+    for m in failed_msgs:
+        writer.writerow([m['mobile'], m['date'], m['template_label'], m['status'], m['error_code'], m['reason']])
+    
+    output.seek(0)
+    filename = f"whatsapp_failed_messages_{from_date or 'all'}_to_{to_date or 'all'}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename={filename}'}
+    )
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 3000))
