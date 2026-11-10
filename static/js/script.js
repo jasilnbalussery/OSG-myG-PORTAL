@@ -3,6 +3,15 @@ function closeModal() {
     document.getElementById('modal-container').classList.add('hidden');
 }
 
+// Close the modal with the Esc key (X button and Cancel keep working as before)
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    const modal = document.getElementById('modal-container');
+    if (modal && !modal.classList.contains('hidden')) {
+        closeModal();
+    }
+});
+
 // Format Date like "21 Dec 2025"
 function formatDate(dateStr) {
     if (!dateStr) return "--";
