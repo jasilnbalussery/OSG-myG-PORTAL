@@ -41,6 +41,11 @@ from validators import (
 
 load_dotenv()
 
+# Ensure the latest Google Apps Script Web App URL is used even if Render env still holds the old deployment URL
+_LATEST_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw238DfO-0JmMY9heo2YqiuXYLJkGsT6Hv7Fhg7VjTRgjeoTpu0NJ468zPIXLjXmn2u/exec"
+if not os.environ.get("WEB_APP_URL") or "AKfycbxY8f8zmwx5uKNVHhdh79bqbDHp3eq2xvx8m_Qsy3TFTEF5Kv4mUnOGGfOORbe6V7Q2" in os.environ.get("WEB_APP_URL", ""):
+    os.environ["WEB_APP_URL"] = _LATEST_WEB_APP_URL
+
 # Performance monitoring
 from perf_utils import timed_excel_read
 
