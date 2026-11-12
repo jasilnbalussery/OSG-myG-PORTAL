@@ -251,14 +251,23 @@ async function searchCustomer() {
                     el.className = 'product-card';
                     el.dataset.index = index; // Store index for reference
                     el.innerHTML = `
-                            <h4>${prod.model}</h4>
-                            <p style="font-size:0.8rem; color:#777">Serial: ${prod.serial}</p>
-                            <p style="font-size:0.8rem; color:#777">OSID: ${prod.osid}</p>
-                            <p style="font-size:0.8rem; color:#777">Inv: ${prod.invoice}</p>
+                            <div class="product-checkbox-wrap">
+                                <input type="checkbox" class="product-select-checkbox" aria-label="Select ${prod.model}" onclick="event.stopPropagation(); toggleProductSelection_byIndex(${index}, this.closest('.product-card'));">
+                            </div>
+                            <div class="product-card-details">
+                                <h4>${prod.model}</h4>
+                                <div class="product-meta-row">
+                                    <span><strong>Serial:</strong> ${prod.serial}</span>
+                                    <span><strong>OSID:</strong> ${prod.osid}</span>
+                                    <span><strong>Inv:</strong> ${prod.invoice}</span>
+                                </div>
+                            </div>
+                            <span class="product-select-badge">Select</span>
                         `;
                     el.onclick = () => toggleProductSelection(prod, el);
                     productList.appendChild(el);
                 });
+                window._lookupProducts = data.products;
             } else {
                 productList.innerHTML = '<p style="color:#777; font-style:italic;">No registered products found. Register a new one below.</p>';
             }
@@ -308,17 +317,29 @@ async function searchCustomer() {
     }
 }
 // Toggle Selection
+function toggleProductSelection_byIndex(idx, element) {
+    if (window._lookupProducts && window._lookupProducts[idx]) {
+        toggleProductSelection(window._lookupProducts[idx], element);
+    }
+}
+
 function toggleProductSelection(product, element) {
     const index = window.selectedProducts.findIndex(p => p.osid === product.osid && p.serial === product.serial);
+    const cb = element.querySelector('.product-select-checkbox');
+    const badge = element.querySelector('.product-select-badge');
 
     if (index === -1) {
         // Add
         window.selectedProducts.push(product);
         element.classList.add('selected');
+        if (cb) cb.checked = true;
+        if (badge) badge.textContent = '✓ Selected';
     } else {
         // Remove
         window.selectedProducts.splice(index, 1);
         element.classList.remove('selected');
+        if (cb) cb.checked = false;
+        if (badge) badge.textContent = 'Select';
     }
     renderClaimForms();
 }
