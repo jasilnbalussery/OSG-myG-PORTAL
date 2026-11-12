@@ -262,9 +262,8 @@ async function searchCustomer() {
                                     <span><strong>Inv:</strong> ${prod.invoice}</span>
                                 </div>
                             </div>
-                            <span class="product-select-badge">Select</span>
+                            <span class="product-select-badge" onclick="event.stopPropagation(); toggleProductSelection_byIndex(${index}, this.closest('.product-card'));">Select</span>
                         `;
-                    el.onclick = () => toggleProductSelection(prod, el);
                     productList.appendChild(el);
                 });
                 window._lookupProducts = data.products;
