@@ -99,26 +99,17 @@ function _findRowIndex(sheet, headers, incomingClaimId, incomingSrNo, legacyLook
   const claimIdColIdx = _colIndex(headers, CLAIM_ID_COLUMN);
   const srNoColIdx    = _colIndex(headers, SR_NO_COLUMN);
 
-  for (let i = 0; i < dataRows; i++) {
-    const row = allData[i].map(String);
+  // PASS 1: Search ALL rows by Claim ID first (never match by SR No before checking every row's Claim ID)
+  if (incomingClaimId) {
+    for (let i = 0; i < dataRows; i++) {
+      const row = allData[i].map(v => String(v || "").trim());
 
-    // 1. Claim ID column match (most reliable for new rows)
-    if (incomingClaimId && claimIdColIdx !== -1 && row[claimIdColIdx] === incomingClaimId) {
-      Logger.log("Found row " + (HEADER_ROW_INDEX + 1 + i) + " via Claim ID column");
-      return HEADER_ROW_INDEX + 1 + i;
-    }
-    // 2. SR No column match (real SR numbers)
-    if (incomingSrNo && srNoColIdx !== -1 && row[srNoColIdx] === incomingSrNo) {
-      Logger.log("Found row " + (HEADER_ROW_INDEX + 1 + i) + " via SR No match");
-      return HEADER_ROW_INDEX + 1 + i;
-    }
-    // 3. Legacy CLM value stored in SR No column
-    if (legacyLookup && srNoColIdx !== -1 && row[srNoColIdx] === legacyLookup) {
-      Logger.log("Found row " + (HEADER_ROW_INDEX + 1 + i) + " via legacy SR No lookup");
-      return HEADER_ROW_INDEX + 1 + i;
-    }
-    // 4. BRUTE FORCE: search every cell in this row for the CLM value
-    if (incomingClaimId) {
+      // 1a. Exact match in Claim ID column
+      if (claimIdColIdx !== -1 && row[claimIdColIdx] === incomingClaimId) {
+        Logger.log("Found row " + (HEADER_ROW_INDEX + 1 + i) + " via Claim ID column");
+        return HEADER_ROW_INDEX + 1 + i;
+      }
+      // 1b. Brute-force scan for Claim ID in any column of this row
       for (let c = 0; c < row.length; c++) {
         if (row[c] === incomingClaimId) {
           Logger.log("Found row " + (HEADER_ROW_INDEX + 1 + i) + " via brute-force scan (col " + c + ")");
@@ -127,6 +118,29 @@ function _findRowIndex(sheet, headers, incomingClaimId, incomingSrNo, legacyLook
       }
     }
   }
+
+  // PASS 2: Fallback to SR No / legacy lookup ONLY on rows that do NOT already have a different Claim ID
+  for (let i = 0; i < dataRows; i++) {
+    const row = allData[i].map(v => String(v || "").trim());
+    const existingRowClaimId = (claimIdColIdx !== -1) ? row[claimIdColIdx] : "";
+
+    // Never hijack a row that already belongs to another Claim ID
+    if (existingRowClaimId && incomingClaimId && existingRowClaimId !== incomingClaimId) {
+      continue;
+    }
+
+    // 2. SR No column match (real SR numbers)
+    if (incomingSrNo && srNoColIdx !== -1 && row[srNoColIdx] === incomingSrNo) {
+      Logger.log("Found row " + (HEADER_ROW_INDEX + 1 + i) + " via SR No match (no conflicting Claim ID)");
+      return HEADER_ROW_INDEX + 1 + i;
+    }
+    // 3. Legacy CLM value stored in SR No column
+    if (legacyLookup && srNoColIdx !== -1 && row[srNoColIdx] === legacyLookup) {
+      Logger.log("Found row " + (HEADER_ROW_INDEX + 1 + i) + " via legacy SR No lookup");
+      return HEADER_ROW_INDEX + 1 + i;
+    }
+  }
+
   Logger.log("Row NOT found for Claim ID: " + incomingClaimId + " / SR No: " + incomingSrNo);
   return -1;
 }
@@ -175,11 +189,12 @@ function doPost(e) {
       var existingValues = existingRange.getValues()[0];
       while (existingValues.length < headers.length) existingValues.push("");
 
-      // Merge payload (skip blacklisted columns)
+      // Merge payload (skip blacklisted columns and never overwrite an existing different Claim ID)
       for (let i = 0; i < headers.length; i++) {
         const h = headers[i];
         if (SHEET_BLACKLIST.indexOf(h) !== -1) continue;
         if (h === "_legacy_sr_lookup") continue;
+        if (h === CLAIM_ID_COLUMN) continue;
         if (body.hasOwnProperty(h)) existingValues[i] = body[h];
       }
 
@@ -191,8 +206,8 @@ function doPost(e) {
         existingValues[mobileIdx] = body["Mobile"] || body["Mobile Number"];
       }
 
-      // Always write Claim ID to its dedicated column
-      if (claimIdColIdx !== -1 && incomingClaimId) {
+      // Write Claim ID to its dedicated column only if empty or matching
+      if (claimIdColIdx !== -1 && incomingClaimId && !String(existingValues[claimIdColIdx] || "").trim()) {
         existingValues[claimIdColIdx] = incomingClaimId;
       }
 
@@ -298,6 +313,10 @@ function doGet(e) {
         if (!headers[c]) continue;
         let val = row[c];
         if (val instanceof Date) val = Utilities.formatDate(val, "Asia/Kolkata", "yyyy-MM-dd");
+        // Do not overwrite an already-populated column if a duplicate header later in the sheet is empty
+        if (obj.hasOwnProperty(headers[c]) && String(obj[headers[c]] || "").trim() !== "" && String(val || "").trim() === "") {
+          continue;
+        }
         obj[headers[c]] = val;
       }
       return obj;
@@ -307,6 +326,88 @@ function doGet(e) {
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// -----------------------------------------
+// ONE-TIME FIX: run this manually from the Apps Script editor (Run > fixSrNoColumn).
+// Column A header was "f" instead of "SR No", so the script created a second
+// "SR No" column at the far right and wrote SR numbers there. This function:
+//   1. Renames A1 to "SR No"
+//   2. Copies SR numbers from the far-right "SR No" column into column A
+//      (only where column A is empty - never overwrites existing values)
+//   3. Deletes the duplicate far-right "SR No" column
+// -----------------------------------------
+function fixSrNoColumn() {
+  const sheet = _getSheet();
+  let headers = _readHeaders(sheet);
+
+  // Find the duplicate (last) "SR No" column
+  let dupIdx = -1;
+  for (let i = headers.length - 1; i > 0; i--) {
+    if (headers[i] === SR_NO_COLUMN) { dupIdx = i; break; }
+  }
+
+  // Make sure column A is the real SR No column
+  if (headers[0] !== SR_NO_COLUMN) {
+    sheet.getRange(HEADER_ROW_INDEX, 1).setValue(SR_NO_COLUMN);
+  }
+
+  if (dupIdx === -1) {
+    Logger.log("No duplicate SR No column found. Header in A1 is now 'SR No'.");
+  } else {
+    const lastRow = sheet.getLastRow();
+    if (lastRow > HEADER_ROW_INDEX) {
+      const n = lastRow - HEADER_ROW_INDEX;
+      const colA = sheet.getRange(HEADER_ROW_INDEX + 1, 1, n, 1).getValues();
+      const dup  = sheet.getRange(HEADER_ROW_INDEX + 1, dupIdx + 1, n, 1).getValues();
+      let moved = 0;
+      for (let r = 0; r < n; r++) {
+        const a = String(colA[r][0] || "").trim();
+        const d = String(dup[r][0]  || "").trim();
+        if (!a && d && !d.startsWith("CLM-")) { colA[r][0] = d; moved++; }
+      }
+      sheet.getRange(HEADER_ROW_INDEX + 1, 1, n, 1).setValues(colA);
+      Logger.log("Moved " + moved + " SR numbers into column A.");
+    }
+
+    sheet.deleteColumn(dupIdx + 1);
+    Logger.log("Deleted duplicate SR No column (was column " + (dupIdx + 1) + ").");
+  }
+
+  fixDuplicateClaimIds();
+}
+
+// -----------------------------------------
+// ONE-TIME FIX: Restores overwritten Claim IDs on rows that collided via shared SR No
+// -----------------------------------------
+function fixDuplicateClaimIds() {
+  const sheet = _getSheet();
+  const headers = _readHeaders(sheet);
+  const claimIdColIdx = _colIndex(headers, CLAIM_ID_COLUMN);
+  if (claimIdColIdx === -1) return;
+
+  // Map of 1-based Sheet Row -> True Claim ID to restore
+  const rowFixes = {
+    113:  "",
+    159:  "CLM-1783500617",
+    294:  "CLM-1785322282",
+    431:  "CLM-1787200218",
+    518:  "CLM-1788584699",
+    711:  "CLM-1790661240",
+    782:  "CLM-1791348743",
+    1060: "CLM-1793254192",
+    1117: "CLM-1793767909",
+    1123: "CLM-1793772963"
+  };
+
+  const colNum = claimIdColIdx + 1;
+  for (const rowStr in rowFixes) {
+    const rowNum = parseInt(rowStr, 10);
+    if (rowNum <= sheet.getLastRow()) {
+      sheet.getRange(rowNum, colNum).setValue(rowFixes[rowStr]);
+      Logger.log("Restored Row " + rowNum + " Claim ID -> " + rowFixes[rowStr]);
+    }
   }
 }
 

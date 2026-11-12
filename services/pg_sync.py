@@ -295,7 +295,7 @@ def upsert_claim_to_postgres(claim_data: dict, source: str = "sheet") -> dict:
             
             appended = False
             if old_db_status.lower() not in TERMINAL_STATUSES:
-                if remarks_val and remarks_val.lower() != old_remarks.lower():
+                if remarks_val and remarks_val.lower() != old_remarks.lower() and remarks_val.lower() not in notes_val.lower():
                     notes_val += f"\n[{ts}] [REMARK]: {remarks_val}"
                     appended = True
                 if onsitego_val and onsitego_val.lower() != old_onsitego.lower() and onsitego_val.lower() not in notes_val.lower():

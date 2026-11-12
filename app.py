@@ -3844,14 +3844,52 @@ def start_sheet_poller():
                 db_data = fetch_claims_from_postgres()
                 db_dict = {str(c.get("Claim ID", "")): c for c in db_data}
                 
-                updates_made = False
+                # Deduplicate sheet rows by Claim ID so two sheet rows sharing a Claim ID
+                # never ping-pong against each other on alternating poll cycles.
+                dedup_sheet_rows = {}
                 for row in sheet_data:
-                    cid = str(row.get("Claim ID") or row.get("claim_id") or "").strip()
-                    # Fix space vs hyphen mismatch if user manually edited Claim ID
-                    cid = cid.replace(" ", "-") 
+                    if not isinstance(row, dict):
+                        continue
+                    cid = str(row.get("Claim ID") or row.get("claim_id") or "").strip().replace(" ", "-")
                     if not cid or not cid.startswith("CLM"):
                         continue
-                        
+                    if cid not in dedup_sheet_rows:
+                        dedup_sheet_rows[cid] = row
+                    else:
+                        prev_row = dedup_sheet_rows[cid]
+                        db_row = db_dict.get(cid, {})
+                        prev_rem = str(prev_row.get("REMARKS") or prev_row.get("Remarks") or "").strip().lower()
+                        curr_rem = str(row.get("REMARKS") or row.get("Remarks") or "").strip().lower()
+                        db_date = str(db_row.get("Date") or db_row.get("Submitted Date") or "").strip()[:10]
+                        prev_date = str(prev_row.get("Submitted Date") or prev_row.get("Date") or "").strip()[:10]
+                        curr_date = str(row.get("Submitted Date") or row.get("Date") or "").strip()[:10]
+                        db_osid = str(db_row.get("OSID") or "").strip()
+                        prev_osid = str(prev_row.get("OSID") or "").strip()
+                        curr_osid = str(row.get("OSID") or "").strip()
+
+                        # 1. Never overwrite a real row with a row marked "Duplicate Entry"
+                        if "duplicate entry" in curr_rem and "duplicate entry" not in prev_rem:
+                            continue
+                        if "duplicate entry" in prev_rem and "duplicate entry" not in curr_rem:
+                            dedup_sheet_rows[cid] = row
+                            continue
+                        # 2. Prefer the sheet row whose Submitted Date matches the DB claim Date
+                        if db_date and curr_date == db_date and prev_date != db_date:
+                            dedup_sheet_rows[cid] = row
+                            continue
+                        if db_date and prev_date == db_date and curr_date != db_date:
+                            continue
+                        # 3. Prefer the sheet row whose OSID matches the DB claim OSID
+                        if db_osid and curr_osid == db_osid and prev_osid != db_osid:
+                            dedup_sheet_rows[cid] = row
+                            continue
+                        if db_osid and prev_osid == db_osid and curr_osid != db_osid:
+                            continue
+                        # Default: latest row wins
+                        dedup_sheet_rows[cid] = row
+
+                updates_made = False
+                for cid, row in dedup_sheet_rows.items():
                     db_row = db_dict.get(cid, {})
                     
                     # Extract sheet Remarks, Onsitego, and SR No
