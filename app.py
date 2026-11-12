@@ -1033,6 +1033,100 @@ def download_report():
 # ──────────────────────────────────────────────────────────────────────────
 # CUSTOMER LOOKUP — PostgreSQL (osid_data table)
 # ──────────────────────────────────────────────────────────────────────────
+def _add_years_safe(d: datetime.date, years: int) -> datetime.date:
+    try:
+        return d.replace(year=d.year + years)
+    except ValueError:
+        return d.replace(month=2, day=28, year=d.year + years)
+
+
+def _compute_warranty_info(r: dict) -> dict:
+    raw_date = str(r.get('date') or '').strip()
+    retailer_sku = str(r.get('retailer_sku') or '').strip()
+    plan_type = str(r.get('plan_type') or '').strip()
+
+    # 1. Extract Brand + Extended years (e.g. "Dur : 2+1")
+    brand_years = None
+    ext_years = None
+    m = re.search(r'Dur\s*:\s*(\d+)\s*\+\s*(\d+)', retailer_sku, re.IGNORECASE)
+    if m:
+        brand_years = int(m.group(1))
+        ext_years = int(m.group(2))
+    else:
+        try:
+            if r.get('manufacturer_warranty') not in (None, ''):
+                brand_years = int(float(str(r.get('manufacturer_warranty')).strip()))
+        except Exception:
+            pass
+        try:
+            if r.get('duration_year') not in (None, ''):
+                ext_years = int(float(str(r.get('duration_year')).strip()))
+        except Exception:
+            pass
+
+    if brand_years is None:
+        brand_years = 1
+    if ext_years is None:
+        ext_years = 1
+
+    # 2. Parse purchase / warranty start date
+    purchase_dt = None
+    if raw_date:
+        s_date = raw_date[:10].strip()
+        for fmt in ('%d-%m-%Y', '%Y-%m-%d', '%d/%m/%Y', '%Y/%m/%d'):
+            try:
+                purchase_dt = datetime.datetime.strptime(s_date, fmt).date()
+                break
+            except ValueError:
+                continue
+
+    if not purchase_dt:
+        return {
+            'purchase_date': raw_date,
+            'retailer_sku': retailer_sku,
+            'plan_type': plan_type,
+            'plan_duration': f"{brand_years}+{ext_years}",
+            'brand_years': brand_years,
+            'ext_years': ext_years,
+            'brand_valid_from': '',
+            'brand_valid_until': '',
+            'ext_valid_from': '',
+            'ext_valid_until': '',
+            'warranty_stage': 'UNKNOWN',
+            'warranty_label': 'Warranty Dates Unavailable',
+        }
+
+    ext_valid_from_dt = _add_years_safe(purchase_dt, brand_years)
+    brand_valid_until_dt = ext_valid_from_dt - datetime.timedelta(days=1)
+    ext_valid_until_dt = _add_years_safe(purchase_dt, brand_years + ext_years) - datetime.timedelta(days=1)
+
+    today = get_ist_now().date()
+    if today < ext_valid_from_dt:
+        warranty_stage = 'BRAND_WARRANTY'
+        warranty_label = 'Under Brand Warranty (Extended Plan Not Started)'
+    elif today <= ext_valid_until_dt:
+        warranty_stage = 'EXTENDED_WARRANTY'
+        warranty_label = 'Active — Under Extended Warranty'
+    else:
+        warranty_stage = 'EXPIRED'
+        warranty_label = 'Extended Warranty Expired'
+
+    return {
+        'purchase_date': purchase_dt.strftime('%d-%m-%Y'),
+        'retailer_sku': retailer_sku,
+        'plan_type': plan_type,
+        'plan_duration': f"{brand_years}+{ext_years}",
+        'brand_years': brand_years,
+        'ext_years': ext_years,
+        'brand_valid_from': purchase_dt.strftime('%d-%m-%Y'),
+        'brand_valid_until': brand_valid_until_dt.strftime('%d-%m-%Y'),
+        'ext_valid_from': ext_valid_from_dt.strftime('%d-%m-%Y'),
+        'ext_valid_until': ext_valid_until_dt.strftime('%d-%m-%Y'),
+        'warranty_stage': warranty_stage,
+        'warranty_label': warranty_label,
+    }
+
+
 def lookup_customer_from_db(mobile: str) -> dict:
     """
     Query the osid_data table for all products linked to a mobile number.
@@ -1050,7 +1144,8 @@ def lookup_customer_from_db(mobile: str) -> dict:
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute("""
-                    SELECT customer, invoice_no, model, serial_no, osid, store_name
+                    SELECT customer, invoice_no, model, serial_no, osid, store_name,
+                           date, retailer_sku, manufacturer_warranty, duration_year, plan_type
                     FROM osid_data
                     WHERE TRIM(mobile_no) = %s
                     ORDER BY date DESC
@@ -1063,16 +1158,17 @@ def lookup_customer_from_db(mobile: str) -> dict:
             return None
 
         name = rows[0]['customer'] or 'Unknown'
-        products = [
-            {
+        products = []
+        for r in rows:
+            w_info = _compute_warranty_info(r)
+            products.append({
                 'invoice': r['invoice_no'] or '',
                 'model':   r['model']      or '',
                 'serial':  r['serial_no']  or '',
                 'osid':    r['osid']       or '',
                 'branch':  r['store_name'] or 'Main Branch',
-            }
-            for r in rows
-        ]
+                **w_info,
+            })
         return {'name': name, 'products': products}
 
     except Exception as e:

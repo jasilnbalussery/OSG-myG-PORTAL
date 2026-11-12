@@ -261,6 +261,7 @@ async function searchCustomer() {
                                     <span><strong>OSID:</strong> ${prod.osid}</span>
                                     <span><strong>Inv:</strong> ${prod.invoice}</span>
                                 </div>
+                                ${buildWarrantyCautionHtml(prod)}
                             </div>
                             <span class="product-select-badge" onclick="event.stopPropagation(); toggleProductSelection_byIndex(${index}, this.closest('.product-card'));">Select</span>
                         `;
@@ -315,6 +316,70 @@ async function searchCustomer() {
         searchBtn.innerHTML = originalBtnText;
     }
 }
+// Build Warranty Caution / Activation Status Box
+function buildWarrantyCautionHtml(prod) {
+    if (!prod || prod.isManual || !prod.purchase_date) return '';
+
+    const stage = prod.warranty_stage || 'UNKNOWN';
+    const planDur = prod.plan_duration || `${prod.brand_years || 1}+${prod.ext_years || 1}`;
+    const bYrs = prod.brand_years || 1;
+    const eYrs = prod.ext_years || 1;
+    const skuHtml = prod.retailer_sku
+        ? `<div style="margin-top: 0.3rem; font-size: 0.78rem; opacity: 0.9;"><strong>Plan SKU:</strong> ${prod.retailer_sku}</div>`
+        : '';
+
+    if (stage === 'BRAND_WARRANTY') {
+        return `
+            <div class="warranty-caution-box stage-brand">
+                <div class="warranty-caution-title">
+                    <i class="ri-error-warning-fill" style="font-size: 1.05rem; color: #d97706;"></i>
+                    CAUTION: UNDER BRAND WARRANTY — EXTENDED PLAN NOT STARTED
+                </div>
+                <div class="warranty-caution-grid">
+                    <span><strong>Warranty Taken:</strong> ${prod.purchase_date}</span>
+                    <span><strong>Plan (${planDur}):</strong> ${bYrs} Yr Brand + ${eYrs} Yr Extended</span>
+                    <span><strong>Brand Warranty:</strong> ${prod.brand_valid_from} to ${prod.brand_valid_until} <em>(Active Now)</em></span>
+                    <span><strong>Extended Activation:</strong> Valid From <strong>${prod.ext_valid_from}</strong> — Valid Until <strong>${prod.ext_valid_until}</strong></span>
+                </div>
+                ${skuHtml}
+            </div>
+        `;
+    } else if (stage === 'EXTENDED_WARRANTY') {
+        return `
+            <div class="warranty-caution-box stage-extended">
+                <div class="warranty-caution-title">
+                    <i class="ri-checkbox-circle-fill" style="font-size: 1.05rem; color: #16a34a;"></i>
+                    ACTIVE: UNDER EXTENDED WARRANTY
+                </div>
+                <div class="warranty-caution-grid">
+                    <span><strong>Warranty Taken:</strong> ${prod.purchase_date}</span>
+                    <span><strong>Plan (${planDur}):</strong> ${bYrs} Yr Brand + ${eYrs} Yr Extended</span>
+                    <span><strong>Brand Warranty:</strong> ${prod.brand_valid_from} to ${prod.brand_valid_until} <em>(Completed)</em></span>
+                    <span><strong>Extended Activation:</strong> Valid From <strong>${prod.ext_valid_from}</strong> — Valid Until <strong>${prod.ext_valid_until}</strong> <em>(Active Now)</em></span>
+                </div>
+                ${skuHtml}
+            </div>
+        `;
+    } else if (stage === 'EXPIRED') {
+        return `
+            <div class="warranty-caution-box stage-expired">
+                <div class="warranty-caution-title">
+                    <i class="ri-close-circle-fill" style="font-size: 1.05rem; color: #dc2626;"></i>
+                    CAUTION: EXTENDED WARRANTY EXPIRED
+                </div>
+                <div class="warranty-caution-grid">
+                    <span><strong>Warranty Taken:</strong> ${prod.purchase_date}</span>
+                    <span><strong>Plan (${planDur}):</strong> ${bYrs} Yr Brand + ${eYrs} Yr Extended</span>
+                    <span><strong>Brand Warranty:</strong> ${prod.brand_valid_from} to ${prod.brand_valid_until}</span>
+                    <span><strong>Extended Activation:</strong> Valid From <strong>${prod.ext_valid_from}</strong> — Valid Until <strong>${prod.ext_valid_until}</strong> <em>(Expired)</em></span>
+                </div>
+                ${skuHtml}
+            </div>
+        `;
+    }
+    return '';
+}
+
 // Toggle Selection
 function toggleProductSelection_byIndex(idx, element) {
     if (window._lookupProducts && window._lookupProducts[idx]) {
@@ -369,9 +434,12 @@ function renderClaimForms() {
         div.style.cssText = "background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);";
 
         div.innerHTML = `
-            <h4 style="color: var(--primary); margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
+            <h4 style="color: var(--primary); margin-bottom: 0.75rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">
                 <i class="ri-smartphone-line"></i> ${prod.model || 'New Product'}
             </h4>
+            <div style="margin-bottom: 1rem;">
+                ${buildWarrantyCautionHtml(prod)}
+            </div>
             
             <div class="grid-2">
                  <div class="form-group">

@@ -276,5 +276,54 @@
         color: #ffffff;
         border-color: #2563eb;
     }
+
+    .warranty-caution-box {
+        margin-top: 0.85rem;
+        padding: 0.85rem 1rem;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        border-left: 4px solid #f59e0b;
+        background: #fffbeb;
+        color: #92400e;
+        user-select: text;
+        -webkit-user-select: text;
+    }
+
+    .warranty-caution-box.stage-brand {
+        border: 1px solid #fcd34d;
+        border-left: 4px solid #d97706;
+        background: #fffbeb;
+        color: #78350f;
+    }
+
+    .warranty-caution-box.stage-extended {
+        border: 1px solid #86efac;
+        border-left: 4px solid #16a34a;
+        background: #f0fdf4;
+        color: #14532d;
+    }
+
+    .warranty-caution-box.stage-expired {
+        border: 1px solid #fca5a5;
+        border-left: 4px solid #dc2626;
+        background: #fef2f2;
+        color: #7f1d1d;
+    }
+
+    .warranty-caution-title {
+        font-weight: 700;
+        font-size: 0.86rem;
+        margin-bottom: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .warranty-caution-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 1.25rem;
+    }
 </style>
 {% endblock %}
